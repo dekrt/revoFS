@@ -279,22 +279,12 @@ static int revofs_create(struct inode *dir,
     int ei = 0, bi = 0, fi = 0;
 
     /* permission_check */
-    int permission_check = 0;
-    if (current_fsuid() == dir->i_uid) {
-        /* current user is the file owner, check owner permission */
-        permission_check = inode_permission(dir, MAY_WRITE);
-    } else if (in_egroup_p(dir->i_gid)) {
-        /* The current user is in the file's group, check group permissions */
-        permission_check = inode_permission(dir, MAY_WRITE << 3);
-    } else {
-        /* Other users, check other user permissions */
-        permission_check = inode_permission(dir, MAY_WRITE << 6);
-    }
-
-    if (permission_check) {
+    if (!uid_eq(current_fsuid(), dir->i_uid))
+    {
+        /* current user is not the file owner, deny the permission */
         pr_err("Permission denied\n");
-        return permission_check;
-    }
+        return -1;
+    } 
 
     /* Check filename length */
     if (strlen(dentry->d_name.name) > REVOFS_FILENAME_LEN)
@@ -732,6 +722,13 @@ static int revofs_mkdir(struct inode *dir,
                           struct dentry *dentry,
                           umode_t mode)
 {
+    /* permission_check */
+    if (!uid_eq(current_fsuid(), dir->i_uid))
+    {
+        /* current user is not the file owner, deny the permission */
+        pr_err("Permission denied\n");
+        return -1;
+    } 
     return revofs_create(dir, dentry, mode | S_IFDIR, 0);
 }
 #endif
