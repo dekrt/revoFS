@@ -95,8 +95,8 @@ failed:
  * Returns NULL on success.
  */
 static struct dentry *revofs_lookup(struct inode *dir,
-                                      struct dentry *dentry,
-                                      unsigned int flags)
+                                    struct dentry *dentry,
+                                    unsigned int flags)
 {
     struct super_block *sb = dir->i_sb;
     struct revofs_inode_info *ci_dir = REVOFS_INODE(dir);
@@ -257,15 +257,15 @@ put_ino:
  */
 #if USER_NS_REQUIRED()
 static int revofs_create(struct user_namespace *ns,
-                           struct inode *dir,
-                           struct dentry *dentry,
-                           umode_t mode,
-                           bool excl)
+                         struct inode *dir,
+                         struct dentry *dentry,
+                         umode_t mode,
+                         bool excl)
 #else
 static int revofs_create(struct inode *dir,
-                           struct dentry *dentry,
-                           umode_t mode,
-                           bool excl)
+                         struct dentry *dentry,
+                         umode_t mode,
+                         bool excl)
 #endif
 {
     struct super_block *sb;
@@ -279,12 +279,11 @@ static int revofs_create(struct inode *dir,
     int ei = 0, bi = 0, fi = 0;
 
     /* permission_check */
-    if (!uid_eq(current_fsuid(), dir->i_uid))
-    {
+    if (!uid_eq(current_fsuid(), dir->i_uid)) {
         /* current user is not the file owner, deny the permission */
         pr_err("Permission denied\n");
         return -1;
-    } 
+    }
 
     /* Check filename length */
     if (strlen(dentry->d_name.name) > REVOFS_FILENAME_LEN)
@@ -421,9 +420,9 @@ static int revofs_remove_from_dir(struct inode *dir, struct dentry *dentry)
                         dblock->files, sizeof(struct revofs_file));
                 brelse(bh_prev);
 
-                memmove(dblock->files, dblock->files + 1,
-                        (REVOFS_FILES_PER_BLOCK - 1) *
-                            sizeof(struct revofs_file));
+                memmove(
+                    dblock->files, dblock->files + 1,
+                    (REVOFS_FILES_PER_BLOCK - 1) * sizeof(struct revofs_file));
                 memset(dblock->files + REVOFS_FILES_PER_BLOCK - 1, 0,
                        sizeof(struct revofs_file));
                 mark_buffer_dirty(bh2);
@@ -485,12 +484,11 @@ static int revofs_unlink(struct inode *dir, struct dentry *dentry)
     uint32_t ino = inode->i_ino;
     uint32_t bno = 0;
     /* permission_check */
-    if (!uid_eq(current_fsuid(), dir->i_uid))
-    {
+    if (!uid_eq(current_fsuid(), dir->i_uid)) {
         /* current user is not the file owner, deny the permission */
         pr_err("Permission denied\n");
         return -1;
-    } 
+    }
     ret = revofs_remove_from_dir(dir, dentry);
     if (ret != 0)
         return ret;
@@ -572,17 +570,17 @@ clean_inode:
 
 #if USER_NS_REQUIRED()
 static int revofs_rename(struct user_namespace *ns,
-                           struct inode *old_dir,
-                           struct dentry *old_dentry,
-                           struct inode *new_dir,
-                           struct dentry *new_dentry,
-                           unsigned int flags)
+                         struct inode *old_dir,
+                         struct dentry *old_dentry,
+                         struct inode *new_dir,
+                         struct dentry *new_dentry,
+                         unsigned int flags)
 #else
 static int revofs_rename(struct inode *old_dir,
-                           struct dentry *old_dentry,
-                           struct inode *new_dir,
-                           struct dentry *new_dentry,
-                           unsigned int flags)
+                         struct dentry *old_dentry,
+                         struct inode *new_dir,
+                         struct dentry *new_dentry,
+                         unsigned int flags)
 #endif
 {
     struct super_block *sb = old_dir->i_sb;
@@ -594,12 +592,11 @@ static int revofs_rename(struct inode *old_dir,
     int new_pos = -1, ret = 0;
     int ei = 0, bi = 0, fi = 0, bno = 0;
     /* permission_check */
-    if (!uid_eq(current_fsuid(), dir->i_uid))
-    {
+    if (!uid_eq(current_fsuid(), dir->i_uid)) {
         /* current user is not the file owner, deny the permission */
         pr_err("Permission denied\n");
         return -1;
-    } 
+    }
     /* fail with these unsupported flags */
     if (flags & (RENAME_EXCHANGE | RENAME_WHITEOUT))
         return -EINVAL;
@@ -723,24 +720,21 @@ release_new:
 
 #if USER_NS_REQUIRED()
 static int revofs_mkdir(struct user_namespace *ns,
-                          struct inode *dir,
-                          struct dentry *dentry,
-                          umode_t mode)
+                        struct inode *dir,
+                        struct dentry *dentry,
+                        umode_t mode)
 {
     return revofs_create(ns, dir, dentry, mode | S_IFDIR, 0);
 }
 #else
-static int revofs_mkdir(struct inode *dir,
-                          struct dentry *dentry,
-                          umode_t mode)
+static int revofs_mkdir(struct inode *dir, struct dentry *dentry, umode_t mode)
 {
     /* permission_check */
-    if (!uid_eq(current_fsuid(), dir->i_uid))
-    {
+    if (!uid_eq(current_fsuid(), dir->i_uid)) {
         /* current user is not the file owner, deny the permission */
         pr_err("Permission denied\n");
         return -1;
-    } 
+    }
     return revofs_create(dir, dentry, mode | S_IFDIR, 0);
 }
 #endif
@@ -752,12 +746,11 @@ static int revofs_rmdir(struct inode *dir, struct dentry *dentry)
     struct buffer_head *bh;
     struct revofs_file_ei_block *eblock;
     /* permission_check */
-    if (!uid_eq(current_fsuid(), dir->i_uid))
-    {
+    if (!uid_eq(current_fsuid(), dir->i_uid)) {
         /* current user is not the file owner, deny the permission */
         pr_err("Permission denied\n");
         return -1;
-    } 
+    }
     /* If the directory is not empty, fail */
     if (inode->i_nlink > 2)
         return -ENOTEMPTY;
@@ -776,8 +769,8 @@ static int revofs_rmdir(struct inode *dir, struct dentry *dentry)
 }
 
 static int revofs_link(struct dentry *old_dentry,
-                         struct inode *dir,
-                         struct dentry *dentry)
+                       struct inode *dir,
+                       struct dentry *dentry)
 {
     struct inode *inode = d_inode(old_dentry);
     struct super_block *sb = inode->i_sb;
@@ -788,12 +781,11 @@ static int revofs_link(struct dentry *old_dentry,
     int ret = 0, alloc = false, bno = 0;
     int ei = 0, bi = 0, fi = 0;
     /* permission_check */
-    if (!uid_eq(current_fsuid(), dir->i_uid))
-    {
+    if (!uid_eq(current_fsuid(), dir->i_uid)) {
         /* current user is not the file owner, deny the permission */
         pr_err("Permission denied\n");
         return -1;
-    } 
+    }
     bh = sb_bread(sb, ci_dir->ei_block);
     if (!bh)
         return -EIO;
@@ -856,13 +848,13 @@ end:
 
 #if USER_NS_REQUIRED()
 static int revofs_symlink(struct user_namespace *ns,
-                            struct inode *dir,
-                            struct dentry *dentry,
-                            const char *symname)
+                          struct inode *dir,
+                          struct dentry *dentry,
+                          const char *symname)
 #else
 static int revofs_symlink(struct inode *dir,
-                            struct dentry *dentry,
-                            const char *symname)
+                          struct dentry *dentry,
+                          const char *symname)
 #endif
 {
     struct super_block *sb = dir->i_sb;
@@ -946,8 +938,8 @@ end:
 }
 
 static const char *revofs_get_link(struct dentry *dentry,
-                                     struct inode *inode,
-                                     struct delayed_call *done)
+                                   struct inode *inode,
+                                   struct delayed_call *done)
 {
     return inode->i_link;
 }
