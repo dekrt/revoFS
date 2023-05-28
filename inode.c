@@ -484,7 +484,13 @@ static int revofs_unlink(struct inode *dir, struct dentry *dentry)
 
     uint32_t ino = inode->i_ino;
     uint32_t bno = 0;
-
+    /* permission_check */
+    if (!uid_eq(current_fsuid(), dir->i_uid))
+    {
+        /* current user is not the file owner, deny the permission */
+        pr_err("Permission denied\n");
+        return -1;
+    } 
     ret = revofs_remove_from_dir(dir, dentry);
     if (ret != 0)
         return ret;
@@ -587,7 +593,13 @@ static int revofs_rename(struct inode *old_dir,
     struct revofs_dir_block *dblock = NULL;
     int new_pos = -1, ret = 0;
     int ei = 0, bi = 0, fi = 0, bno = 0;
-
+    /* permission_check */
+    if (!uid_eq(current_fsuid(), dir->i_uid))
+    {
+        /* current user is not the file owner, deny the permission */
+        pr_err("Permission denied\n");
+        return -1;
+    } 
     /* fail with these unsupported flags */
     if (flags & (RENAME_EXCHANGE | RENAME_WHITEOUT))
         return -EINVAL;
@@ -739,7 +751,13 @@ static int revofs_rmdir(struct inode *dir, struct dentry *dentry)
     struct inode *inode = d_inode(dentry);
     struct buffer_head *bh;
     struct revofs_file_ei_block *eblock;
-
+    /* permission_check */
+    if (!uid_eq(current_fsuid(), dir->i_uid))
+    {
+        /* current user is not the file owner, deny the permission */
+        pr_err("Permission denied\n");
+        return -1;
+    } 
     /* If the directory is not empty, fail */
     if (inode->i_nlink > 2)
         return -ENOTEMPTY;
@@ -769,7 +787,13 @@ static int revofs_link(struct dentry *old_dentry,
     struct buffer_head *bh = NULL, *bh2 = NULL;
     int ret = 0, alloc = false, bno = 0;
     int ei = 0, bi = 0, fi = 0;
-
+    /* permission_check */
+    if (!uid_eq(current_fsuid(), dir->i_uid))
+    {
+        /* current user is not the file owner, deny the permission */
+        pr_err("Permission denied\n");
+        return -1;
+    } 
     bh = sb_bread(sb, ci_dir->ei_block);
     if (!bh)
         return -EIO;
