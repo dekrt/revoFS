@@ -1,26 +1,26 @@
-#define pr_fmt(fmt) "simplefs: " fmt
+#define pr_fmt(fmt) "revofs: " fmt
 
 #include <linux/buffer_head.h>
 #include <linux/fs.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
 
-#include "simplefs.h"
+#include "revofs.h"
 
 /*
  * Iterate over the files contained in dir and commit them in ctx.
  * This function is called by the VFS while ctx->pos changes.
  * Return 0 on success.
  */
-static int simplefs_iterate(struct file *dir, struct dir_context *ctx)
+static int revofs_iterate(struct file *dir, struct dir_context *ctx)
 {
     struct inode *inode = file_inode(dir);
-    struct simplefs_inode_info *ci = SIMPLEFS_INODE(inode);
+    struct revofs_inode_info *ci = REVOFS_INODE(inode);
     struct super_block *sb = inode->i_sb;
     struct buffer_head *bh = NULL, *bh2 = NULL;
-    struct simplefs_file_ei_block *eblock = NULL;
-    struct simplefs_dir_block *dblock = NULL;
-    struct simplefs_file *f = NULL;
+    struct revofs_file_ei_block *eblock = NULL;
+    struct revofs_dir_block *dblock = NULL;
+    struct revofs_file *f = NULL;
     int ei = 0, bi = 0, fi = 0;
     int ret = 0;
 
@@ -32,7 +32,7 @@ static int simplefs_iterate(struct file *dir, struct dir_context *ctx)
      * Check that ctx->pos is not bigger than what we can handle (including
      * . and ..)
      */
-    if (ctx->pos > SIMPLEFS_MAX_SUBFILES + 2)
+    if (ctx->pos > REVOFS_MAX_SUBFILES + 2)
         return 0;
 
     /* Commit . and .. to ctx */
@@ -43,15 +43,15 @@ static int simplefs_iterate(struct file *dir, struct dir_context *ctx)
     bh = sb_bread(sb, ci->ei_block);
     if (!bh)
         return -EIO;
-    eblock = (struct simplefs_file_ei_block *) bh->b_data;
+    eblock = (struct revofs_file_ei_block *) bh->b_data;
 
-    ei = (ctx->pos - 2) / SIMPLEFS_FILES_PER_EXT;
-    bi = (ctx->pos - 2) % SIMPLEFS_FILES_PER_EXT
-         / SIMPLEFS_FILES_PER_BLOCK;
-    fi = (ctx->pos - 2) % SIMPLEFS_FILES_PER_BLOCK;
+    ei = (ctx->pos - 2) / REVOFS_FILES_PER_EXT;
+    bi = (ctx->pos - 2) % REVOFS_FILES_PER_EXT
+         / REVOFS_FILES_PER_BLOCK;
+    fi = (ctx->pos - 2) % REVOFS_FILES_PER_BLOCK;
 
     /* Iterate over the index block and commit subfiles */
-    for (; ei < SIMPLEFS_MAX_EXTENTS; ei++) {
+    for (; ei < REVOFS_MAX_EXTENTS; ei++) {
         if (eblock->extents[ei].ee_start == 0) {
             break;
         }
@@ -62,14 +62,14 @@ static int simplefs_iterate(struct file *dir, struct dir_context *ctx)
                 ret = -EIO;
                 goto release_bh;
             }
-            dblock = (struct simplefs_dir_block *) bh2->b_data;
+            dblock = (struct revofs_dir_block *) bh2->b_data;
             if (dblock->files[0].inode == 0) {
                 break;
             }
             /* Iterate every file in one block */
-            for (; fi < SIMPLEFS_FILES_PER_BLOCK; fi++) {
+            for (; fi < REVOFS_FILES_PER_BLOCK; fi++) {
                 f = &dblock->files[fi];
-                if (f->inode && !dir_emit(ctx, f->filename, SIMPLEFS_FILENAME_LEN,
+                if (f->inode && !dir_emit(ctx, f->filename, REVOFS_FILENAME_LEN,
                                f->inode, DT_UNKNOWN))
                     break;
                 ctx->pos++;
@@ -85,7 +85,7 @@ release_bh:
     return ret;
 }
 
-const struct file_operations simplefs_dir_ops = {
+const struct file_operations revofs_dir_ops = {
     .owner = THIS_MODULE,
-    .iterate_shared = simplefs_iterate,
+    .iterate_shared = revofs_iterate,
 };

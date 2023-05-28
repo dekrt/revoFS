@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SIMPLEFS_MOD=simplefs.ko
+REVOFS_MOD=revofs.ko
 IMAGE=$1
 IMAGESIZE=$2
 MKFS=$3
@@ -8,7 +8,7 @@ MKFS=$3
 D_MOD="drwxr-xr-x"
 F_MOD="-rw-r--r--"
 S_MOD="lrwxrwxrwx"
-MAXFILESIZE=11173888 # SIMPLEFS_MAX_EXTENTS * SIMPLEFS_MAX_BLOCKS_PER_EXTENT * SIMPLEFS_BLOCK_SIZE
+MAXFILESIZE=11173888 # REVOFS_MAX_EXTENTS * REVOFS_MAX_BLOCKS_PER_EXTENT * REVOFS_BLOCK_SIZE
 MAXFILES=40920        # max files per dir
 
 test_op() {
@@ -36,14 +36,14 @@ fi
 mkdir -p test  
 sudo umount test 2>/dev/null
 sleep 1
-sudo rmmod simplefs 2>/dev/null
+sudo rmmod revofs 2>/dev/null
 sleep 1
-(modinfo $SIMPLEFS_MOD || exit 1) && \
+(modinfo $REVOFS_MOD || exit 1) && \
 echo && \
-sudo insmod $SIMPLEFS_MOD  && \
+sudo insmod $REVOFS_MOD  && \
 dd if=/dev/zero of=$IMAGE bs=1M count=$IMAGESIZE status=none && \
 ./$MKFS $IMAGE && \
-sudo mount -t simplefs -o loop $IMAGE test && \
+sudo mount -t revofs -o loop $IMAGE test && \
 pushd test >/dev/null
 
 # mkdir
@@ -96,4 +96,4 @@ check_exist $S_MOD 1 symlink
 sleep 1
 popd >/dev/null
 sudo umount test
-sudo rmmod simplefs
+sudo rmmod revofs

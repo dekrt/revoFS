@@ -1,2 +1,2 @@
 # revoFS
-A simple Linux filesystem.
+A revo Linux filesystem.

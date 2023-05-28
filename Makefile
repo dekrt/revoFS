@@ -1,9 +1,9 @@
-obj-m += simplefs.o
-simplefs-objs := fs.o super.o inode.o file.o dir.o extent.o
+obj-m += revofs.o
+revofs-objs := fs.o super.o inode.o file.o dir.o extent.o
 
 KDIR ?= /lib/modules/$(shell uname -r)/build
 
-MKFS = mkfs.simplefs
+MKFS = mkfs.revofs
 
 all: $(MKFS)
 	make -C $(KDIR) M=$(PWD) modules

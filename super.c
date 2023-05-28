@@ -7,28 +7,28 @@
 #include <linux/slab.h>
 #include <linux/statfs.h>
 
-#include "simplefs.h"
+#include "revofs.h"
 
-static struct kmem_cache *simplefs_inode_cache;
+static struct kmem_cache *revofs_inode_cache;
 
-int simplefs_init_inode_cache(void)
+int revofs_init_inode_cache(void)
 {
-    simplefs_inode_cache = kmem_cache_create(
-        "simplefs_cache", sizeof(struct simplefs_inode_info), 0, 0, NULL);
-    if (!simplefs_inode_cache)
+    revofs_inode_cache = kmem_cache_create(
+        "revofs_cache", sizeof(struct revofs_inode_info), 0, 0, NULL);
+    if (!revofs_inode_cache)
         return -ENOMEM;
     return 0;
 }
 
-void simplefs_destroy_inode_cache(void)
+void revofs_destroy_inode_cache(void)
 {
-    kmem_cache_destroy(simplefs_inode_cache);
+    kmem_cache_destroy(revofs_inode_cache);
 }
 
-static struct inode *simplefs_alloc_inode(struct super_block *sb)
+static struct inode *revofs_alloc_inode(struct super_block *sb)
 {
-    struct simplefs_inode_info *ci =
-        kmem_cache_alloc(simplefs_inode_cache, GFP_KERNEL);
+    struct revofs_inode_info *ci =
+        kmem_cache_alloc(revofs_inode_cache, GFP_KERNEL);
     if (!ci)
         return NULL;
 
@@ -36,23 +36,23 @@ static struct inode *simplefs_alloc_inode(struct super_block *sb)
     return &ci->vfs_inode;
 }
 
-static void simplefs_destroy_inode(struct inode *inode)
+static void revofs_destroy_inode(struct inode *inode)
 {
-    struct simplefs_inode_info *ci = SIMPLEFS_INODE(inode);
-    kmem_cache_free(simplefs_inode_cache, ci);
+    struct revofs_inode_info *ci = REVOFS_INODE(inode);
+    kmem_cache_free(revofs_inode_cache, ci);
 }
 
-static int simplefs_write_inode(struct inode *inode,
+static int revofs_write_inode(struct inode *inode,
                                 struct writeback_control *wbc)
 {
-    struct simplefs_inode *disk_inode;
-    struct simplefs_inode_info *ci = SIMPLEFS_INODE(inode);
+    struct revofs_inode *disk_inode;
+    struct revofs_inode_info *ci = REVOFS_INODE(inode);
     struct super_block *sb = inode->i_sb;
-    struct simplefs_sb_info *sbi = SIMPLEFS_SB(sb);
+    struct revofs_sb_info *sbi = REVOFS_SB(sb);
     struct buffer_head *bh;
     uint32_t ino = inode->i_ino;
-    uint32_t inode_block = (ino / SIMPLEFS_INODES_PER_BLOCK) + 1;
-    uint32_t inode_shift = ino % SIMPLEFS_INODES_PER_BLOCK;
+    uint32_t inode_block = (ino / REVOFS_INODES_PER_BLOCK) + 1;
+    uint32_t inode_shift = ino % REVOFS_INODES_PER_BLOCK;
 
     if (ino >= sbi->nr_inodes)
         return 0;
@@ -61,7 +61,7 @@ static int simplefs_write_inode(struct inode *inode,
     if (!bh)
         return -EIO;
 
-    disk_inode = (struct simplefs_inode *) bh->b_data;
+    disk_inode = (struct revofs_inode *) bh->b_data;
     disk_inode += inode_shift;
 
     /* update the mode using what the generic inode has */
@@ -84,9 +84,9 @@ static int simplefs_write_inode(struct inode *inode,
     return 0;
 }
 
-static void simplefs_put_super(struct super_block *sb)
+static void revofs_put_super(struct super_block *sb)
 {
-    struct simplefs_sb_info *sbi = SIMPLEFS_SB(sb);
+    struct revofs_sb_info *sbi = REVOFS_SB(sb);
     if (sbi) {
         kfree(sbi->ifree_bitmap);
         kfree(sbi->bfree_bitmap);
@@ -94,10 +94,10 @@ static void simplefs_put_super(struct super_block *sb)
     }
 }
 
-static int simplefs_sync_fs(struct super_block *sb, int wait)
+static int revofs_sync_fs(struct super_block *sb, int wait)
 {
-    struct simplefs_sb_info *sbi = SIMPLEFS_SB(sb);
-    struct simplefs_sb_info *disk_sb;
+    struct revofs_sb_info *sbi = REVOFS_SB(sb);
+    struct revofs_sb_info *disk_sb;
     int i;
 
     /* Flush superblock */
@@ -105,7 +105,7 @@ static int simplefs_sync_fs(struct super_block *sb, int wait)
     if (!bh)
         return -EIO;
 
-    disk_sb = (struct simplefs_sb_info *) bh->b_data;
+    disk_sb = (struct revofs_sb_info *) bh->b_data;
 
     disk_sb->nr_blocks = sbi->nr_blocks;
     disk_sb->nr_inodes = sbi->nr_inodes;
@@ -128,8 +128,8 @@ static int simplefs_sync_fs(struct super_block *sb, int wait)
         if (!bh)
             return -EIO;
 
-        memcpy(bh->b_data, (void *) sbi->ifree_bitmap + i * SIMPLEFS_BLOCK_SIZE,
-               SIMPLEFS_BLOCK_SIZE);
+        memcpy(bh->b_data, (void *) sbi->ifree_bitmap + i * REVOFS_BLOCK_SIZE,
+               REVOFS_BLOCK_SIZE);
 
         mark_buffer_dirty(bh);
         if (wait)
@@ -145,8 +145,8 @@ static int simplefs_sync_fs(struct super_block *sb, int wait)
         if (!bh)
             return -EIO;
 
-        memcpy(bh->b_data, (void *) sbi->bfree_bitmap + i * SIMPLEFS_BLOCK_SIZE,
-               SIMPLEFS_BLOCK_SIZE);
+        memcpy(bh->b_data, (void *) sbi->bfree_bitmap + i * REVOFS_BLOCK_SIZE,
+               REVOFS_BLOCK_SIZE);
 
         mark_buffer_dirty(bh);
         if (wait)
@@ -157,53 +157,53 @@ static int simplefs_sync_fs(struct super_block *sb, int wait)
     return 0;
 }
 
-static int simplefs_statfs(struct dentry *dentry, struct kstatfs *stat)
+static int revofs_statfs(struct dentry *dentry, struct kstatfs *stat)
 {
     struct super_block *sb = dentry->d_sb;
-    struct simplefs_sb_info *sbi = SIMPLEFS_SB(sb);
+    struct revofs_sb_info *sbi = REVOFS_SB(sb);
 
-    stat->f_type = SIMPLEFS_MAGIC;
-    stat->f_bsize = SIMPLEFS_BLOCK_SIZE;
+    stat->f_type = REVOFS_MAGIC;
+    stat->f_bsize = REVOFS_BLOCK_SIZE;
     stat->f_blocks = sbi->nr_blocks;
     stat->f_bfree = sbi->nr_free_blocks;
     stat->f_bavail = sbi->nr_free_blocks;
     stat->f_files = sbi->nr_inodes - sbi->nr_free_inodes;
     stat->f_ffree = sbi->nr_free_inodes;
-    stat->f_namelen = SIMPLEFS_FILENAME_LEN;
+    stat->f_namelen = REVOFS_FILENAME_LEN;
 
     return 0;
 }
 
-static struct super_operations simplefs_super_ops = {
-    .put_super = simplefs_put_super,
-    .alloc_inode = simplefs_alloc_inode,
-    .destroy_inode = simplefs_destroy_inode,
-    .write_inode = simplefs_write_inode,
-    .sync_fs = simplefs_sync_fs,
-    .statfs = simplefs_statfs,
+static struct super_operations revofs_super_ops = {
+    .put_super = revofs_put_super,
+    .alloc_inode = revofs_alloc_inode,
+    .destroy_inode = revofs_destroy_inode,
+    .write_inode = revofs_write_inode,
+    .sync_fs = revofs_sync_fs,
+    .statfs = revofs_statfs,
 };
 
 /* Fill the struct superblock from partition superblock */
-int simplefs_fill_super(struct super_block *sb, void *data, int silent)
+int revofs_fill_super(struct super_block *sb, void *data, int silent)
 {
     struct buffer_head *bh = NULL;
-    struct simplefs_sb_info *csb = NULL;
-    struct simplefs_sb_info *sbi = NULL;
+    struct revofs_sb_info *csb = NULL;
+    struct revofs_sb_info *sbi = NULL;
     struct inode *root_inode = NULL;
     int ret = 0, i;
 
     /* Init sb */
-    sb->s_magic = SIMPLEFS_MAGIC;
-    sb_set_blocksize(sb, SIMPLEFS_BLOCK_SIZE);
-    sb->s_maxbytes = SIMPLEFS_MAX_FILESIZE;
-    sb->s_op = &simplefs_super_ops;
+    sb->s_magic = REVOFS_MAGIC;
+    sb_set_blocksize(sb, REVOFS_BLOCK_SIZE);
+    sb->s_maxbytes = REVOFS_MAX_FILESIZE;
+    sb->s_op = &revofs_super_ops;
 
     /* Read sb from disk */
-    bh = sb_bread(sb, SIMPLEFS_SB_BLOCK_NR);
+    bh = sb_bread(sb, REVOFS_SB_BLOCK_NR);
     if (!bh)
         return -EIO;
 
-    csb = (struct simplefs_sb_info *) bh->b_data;
+    csb = (struct revofs_sb_info *) bh->b_data;
 
     /* Check magic number */
     if (csb->magic != sb->s_magic) {
@@ -213,7 +213,7 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
     }
 
     /* Alloc sb_info */
-    sbi = kzalloc(sizeof(struct simplefs_sb_info), GFP_KERNEL);
+    sbi = kzalloc(sizeof(struct revofs_sb_info), GFP_KERNEL);
     if (!sbi) {
         ret = -ENOMEM;
         goto release;
@@ -232,7 +232,7 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
 
     /* Alloc and copy ifree_bitmap */
     sbi->ifree_bitmap =
-        kzalloc(sbi->nr_ifree_blocks * SIMPLEFS_BLOCK_SIZE, GFP_KERNEL);
+        kzalloc(sbi->nr_ifree_blocks * REVOFS_BLOCK_SIZE, GFP_KERNEL);
     if (!sbi->ifree_bitmap) {
         ret = -ENOMEM;
         goto free_sbi;
@@ -247,15 +247,15 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
             goto free_ifree;
         }
 
-        memcpy((void *) sbi->ifree_bitmap + i * SIMPLEFS_BLOCK_SIZE, bh->b_data,
-               SIMPLEFS_BLOCK_SIZE);
+        memcpy((void *) sbi->ifree_bitmap + i * REVOFS_BLOCK_SIZE, bh->b_data,
+               REVOFS_BLOCK_SIZE);
 
         brelse(bh);
     }
 
     /* Alloc and copy bfree_bitmap */
     sbi->bfree_bitmap =
-        kzalloc(sbi->nr_bfree_blocks * SIMPLEFS_BLOCK_SIZE, GFP_KERNEL);
+        kzalloc(sbi->nr_bfree_blocks * REVOFS_BLOCK_SIZE, GFP_KERNEL);
     if (!sbi->bfree_bitmap) {
         ret = -ENOMEM;
         goto free_ifree;
@@ -270,14 +270,14 @@ int simplefs_fill_super(struct super_block *sb, void *data, int silent)
             goto free_bfree;
         }
 
-        memcpy((void *) sbi->bfree_bitmap + i * SIMPLEFS_BLOCK_SIZE, bh->b_data,
-               SIMPLEFS_BLOCK_SIZE);
+        memcpy((void *) sbi->bfree_bitmap + i * REVOFS_BLOCK_SIZE, bh->b_data,
+               REVOFS_BLOCK_SIZE);
 
         brelse(bh);
     }
 
     /* Create root inode */
-    root_inode = simplefs_iget(sb, 0);
+    root_inode = revofs_iget(sb, 0);
     if (IS_ERR(root_inode)) {
         ret = PTR_ERR(root_inode);
         goto free_bfree;

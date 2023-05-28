@@ -8,10 +8,10 @@
 #include <linux/fs.h>
 #include <unistd.h>
 
-#include "simplefs.h"
+#include "revofs.h"
 
 struct superblock {
-    struct simplefs_sb_info info;
+    struct revofs_sb_info info;
     char padding[4064]; /* Padding to match block size */
 };
 
@@ -30,20 +30,20 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
     if (!sb)
         return NULL;
 
-    uint32_t nr_blocks = fstats->st_size / SIMPLEFS_BLOCK_SIZE;
+    uint32_t nr_blocks = fstats->st_size / REVOFS_BLOCK_SIZE;
     uint32_t nr_inodes = nr_blocks;
-    uint32_t mod = nr_inodes % SIMPLEFS_INODES_PER_BLOCK;
+    uint32_t mod = nr_inodes % REVOFS_INODES_PER_BLOCK;
     if (mod)
-        nr_inodes += SIMPLEFS_INODES_PER_BLOCK - mod;
-    uint32_t nr_istore_blocks = idiv_ceil(nr_inodes, SIMPLEFS_INODES_PER_BLOCK);
-    uint32_t nr_ifree_blocks = idiv_ceil(nr_inodes, SIMPLEFS_BLOCK_SIZE * 8);
-    uint32_t nr_bfree_blocks = idiv_ceil(nr_blocks, SIMPLEFS_BLOCK_SIZE * 8);
+        nr_inodes += REVOFS_INODES_PER_BLOCK - mod;
+    uint32_t nr_istore_blocks = idiv_ceil(nr_inodes, REVOFS_INODES_PER_BLOCK);
+    uint32_t nr_ifree_blocks = idiv_ceil(nr_inodes, REVOFS_BLOCK_SIZE * 8);
+    uint32_t nr_bfree_blocks = idiv_ceil(nr_blocks, REVOFS_BLOCK_SIZE * 8);
     uint32_t nr_data_blocks =
         nr_blocks - nr_istore_blocks - nr_ifree_blocks - nr_bfree_blocks;
 
     memset(sb, 0, sizeof(struct superblock));
-    sb->info = (struct simplefs_sb_info){
-        .magic = htole32(SIMPLEFS_MAGIC),
+    sb->info = (struct revofs_sb_info){
+        .magic = htole32(REVOFS_MAGIC),
         .nr_blocks = htole32(nr_blocks),
         .nr_inodes = htole32(nr_inodes),
         .nr_istore_blocks = htole32(nr_istore_blocks),
@@ -79,14 +79,14 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
 static int write_inode_store(int fd, struct superblock *sb)
 {
     /* Allocate a zeroed block for inode store */
-    char *block = malloc(SIMPLEFS_BLOCK_SIZE);
+    char *block = malloc(REVOFS_BLOCK_SIZE);
     if (!block)
         return -1;
 
-    memset(block, 0, SIMPLEFS_BLOCK_SIZE);
+    memset(block, 0, REVOFS_BLOCK_SIZE);
 
     /* Root inode (inode 0) */
-    struct simplefs_inode *inode = (struct simplefs_inode *) block;
+    struct revofs_inode *inode = (struct revofs_inode *) block;
     uint32_t first_data_block = 1 + le32toh(sb->info.nr_bfree_blocks) +
                                 le32toh(sb->info.nr_ifree_blocks) +
                                 le32toh(sb->info.nr_istore_blocks);
@@ -94,24 +94,24 @@ static int write_inode_store(int fd, struct superblock *sb)
                             S_IWGRP | S_IXUSR | S_IXGRP | S_IXOTH);
     inode->i_uid = 0;
     inode->i_gid = 0;
-    inode->i_size = htole32(SIMPLEFS_BLOCK_SIZE);
+    inode->i_size = htole32(REVOFS_BLOCK_SIZE);
     inode->i_ctime = inode->i_atime = inode->i_mtime = htole32(0);
     inode->i_blocks = htole32(1);
     inode->i_nlink = htole32(2);
     inode->ei_block = htole32(first_data_block);
 
-    int ret = write(fd, block, SIMPLEFS_BLOCK_SIZE);
-    if (ret != SIMPLEFS_BLOCK_SIZE) {
+    int ret = write(fd, block, REVOFS_BLOCK_SIZE);
+    if (ret != REVOFS_BLOCK_SIZE) {
         ret = -1;
         goto end;
     }
 
     /* Reset inode store blocks to zero */
-    memset(block, 0, SIMPLEFS_BLOCK_SIZE);
+    memset(block, 0, REVOFS_BLOCK_SIZE);
     uint32_t i;
     for (i = 1; i < sb->info.nr_istore_blocks; i++) {
-        ret = write(fd, block, SIMPLEFS_BLOCK_SIZE);
-        if (ret != SIMPLEFS_BLOCK_SIZE) {
+        ret = write(fd, block, REVOFS_BLOCK_SIZE);
+        if (ret != REVOFS_BLOCK_SIZE) {
             ret = -1;
             goto end;
         }
@@ -121,7 +121,7 @@ static int write_inode_store(int fd, struct superblock *sb)
     printf(
         "Inode store: wrote %d blocks\n"
         "\tinode size = %ld B\n",
-        i, sizeof(struct simplefs_inode));
+        i, sizeof(struct revofs_inode));
 
 end:
     free(block);
@@ -130,19 +130,19 @@ end:
 
 static int write_ifree_blocks(int fd, struct superblock *sb)
 {
-    char *block = malloc(SIMPLEFS_BLOCK_SIZE);
+    char *block = malloc(REVOFS_BLOCK_SIZE);
     if (!block)
         return -1;
 
     uint64_t *ifree = (uint64_t *) block;
 
     /* Set all bits to 1 */
-    memset(ifree, 0xff, SIMPLEFS_BLOCK_SIZE);
+    memset(ifree, 0xff, REVOFS_BLOCK_SIZE);
 
     /* First ifree block, containing first used inode */
     ifree[0] = htole64(0xfffffffffffffffe);
-    int ret = write(fd, ifree, SIMPLEFS_BLOCK_SIZE);
-    if (ret != SIMPLEFS_BLOCK_SIZE) {
+    int ret = write(fd, ifree, REVOFS_BLOCK_SIZE);
+    if (ret != REVOFS_BLOCK_SIZE) {
         ret = -1;
         goto end;
     }
@@ -151,8 +151,8 @@ static int write_ifree_blocks(int fd, struct superblock *sb)
     ifree[0] = 0xffffffffffffffff;
     uint32_t i;
     for (i = 1; i < le32toh(sb->info.nr_ifree_blocks); i++) {
-        ret = write(fd, ifree, SIMPLEFS_BLOCK_SIZE);
-        if (ret != SIMPLEFS_BLOCK_SIZE) {
+        ret = write(fd, ifree, REVOFS_BLOCK_SIZE);
+        if (ret != REVOFS_BLOCK_SIZE) {
             ret = -1;
             goto end;
         }
@@ -173,7 +173,7 @@ static int write_bfree_blocks(int fd, struct superblock *sb)
                        le32toh(sb->info.nr_ifree_blocks) +
                        le32toh(sb->info.nr_bfree_blocks) + 2;
 
-    char *block = malloc(SIMPLEFS_BLOCK_SIZE);
+    char *block = malloc(REVOFS_BLOCK_SIZE);
     if (!block)
         return -1;
     uint64_t *bfree = (uint64_t *) block;
@@ -182,7 +182,7 @@ static int write_bfree_blocks(int fd, struct superblock *sb)
      * First blocks (incl. sb + istore + ifree + bfree + 1 used block)
      * we suppose it won't go further than the first block
      */
-    memset(bfree, 0xff, SIMPLEFS_BLOCK_SIZE);
+    memset(bfree, 0xff, REVOFS_BLOCK_SIZE);
     uint32_t i = 0;
     while (nr_used) {
         uint64_t line = 0xffffffffffffffff;
@@ -195,17 +195,17 @@ static int write_bfree_blocks(int fd, struct superblock *sb)
         bfree[i] = htole64(line);
         i++;
     }
-    int ret = write(fd, bfree, SIMPLEFS_BLOCK_SIZE);
-    if (ret != SIMPLEFS_BLOCK_SIZE) {
+    int ret = write(fd, bfree, REVOFS_BLOCK_SIZE);
+    if (ret != REVOFS_BLOCK_SIZE) {
         ret = -1;
         goto end;
     }
 
     /* other blocks */
-    memset(bfree, 0xff, SIMPLEFS_BLOCK_SIZE);
+    memset(bfree, 0xff, REVOFS_BLOCK_SIZE);
     for (i = 1; i < le32toh(sb->info.nr_bfree_blocks); i++) {
-        ret = write(fd, bfree, SIMPLEFS_BLOCK_SIZE);
-        if (ret != SIMPLEFS_BLOCK_SIZE) {
+        ret = write(fd, bfree, REVOFS_BLOCK_SIZE);
+        if (ret != REVOFS_BLOCK_SIZE) {
             ret = -1;
             goto end;
         }
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
     }
 
     /* Check if image is large enough */
-    long int min_size = 100 * SIMPLEFS_BLOCK_SIZE;
+    long int min_size = 100 * REVOFS_BLOCK_SIZE;
     if (stat_buf.st_size <= min_size) {
         fprintf(stderr, "File is not large enough (size=%ld, min size=%ld)\n",
                 stat_buf.st_size, min_size);
