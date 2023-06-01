@@ -53,9 +53,34 @@ revoFS项目的系统框架主要由两部分组成：**内核态的文件系统
 
 ### 2. 用户态的应用程序
 
-用户态的应用程序负责将一个块设备（可以用文件模拟）格式化成我们设计的文件系统的格式。在我们的revoFS系统中，这个应用程序由一个脚本代替。脚本运行在用户态，主要功能是将块设备格式化成我们的文件系统格式，并将其挂载到Linux系统上。便于演示我们文件系统的。
+用户态的应用程序负责将一个块设备（可以用文件模拟）格式化成我们设计的文件系统的格式。在我们的revoFS系统中，这个应用程序由一个脚本代替。脚本运行在用户态，主要功能是将块设备格式化成我们的文件系统格式，并将其挂载到Linux系统上，便于演示我们文件系统。
 
-这两部分共同构成了revoFS项目的系统框架。通过内核态的文件系统模块和用户态的应用程序的紧密协作，我们成功地实现了一个可以进行文件和目录的读写操作的Linux文件系统。
+以下是这个过程的流程图：
+```mermaid
+graph TB
+  BC["开始编译 kernel module 和 tool"]
+  BC -- "编译完成" --> GI["开始生成测试 image"]
+  GI -- "测试 image 生成完成" --> LKM["开始加载 revofs.ko"]
+  LKM -- "kernel module 加载完成" --> CTDI["开始创建测试目录和测试镜像"]
+  CTDI -- "测试目录和测试镜像创建完成" --> MKFS["开始使用 mkfs.revofs 工具创建文件系统"]
+  MKFS -- "文件系统test.img创建完成" --> MT["开始挂载测试镜像"]
+  MT -- "测试镜像挂载到/mnt/test" --> FSOP["开始执行文件系统读写以及权限测试操作"]
+  FSOP -- "文件系统操作完成" --> UM["开始卸载 kernel mount point 和 module"]
+  UM -- "kernel mount point 和 module 卸载完成" --> CC["make clean"]
+  CC -- "构建环境清理完成" --> END["结束"]
+  linkStyle 0 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 1 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 2 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 3 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 4 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 5 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 6 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 7 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 8 stroke:#2ecd71,stroke-width:2px;
+```
+
+这个流程图描述了我们设计和实现文件系统的过程，包括文件系统的加载和卸载过程。
+通过内核态的文件系统模块和用户态的应用程序的紧密协作，我们成功地实现了一个可以进行文件和目录的读写操作的Linux文件系统。
 
 ## 四、设计开发计划
 
