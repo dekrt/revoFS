@@ -26,7 +26,7 @@ sudo mount -o loop -t revofs test.img test
 dmesg | tail
 
 # 执行一些文件系统操作
-sudo chmod 777 ./test
+sudo su
 echo "Hello World" > test/hello
 cat test/hello
 ls -lR

@@ -72,6 +72,6 @@ static void __exit revofs_exit(void)
 module_init(revofs_init);
 module_exit(revofs_exit);
 
-MODULE_LICENSE("Dual BSD/GPL");
-MODULE_AUTHOR("National Cheng Kung University, Taiwan");
-MODULE_DESCRIPTION("a revo file system");
+MODULE_LICENSE("GPL");
+MODULE_AUTHOR("Storage Revolution Team");
+MODULE_DESCRIPTION("a simple file system by Storage Revolution Team");

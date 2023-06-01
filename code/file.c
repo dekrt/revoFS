@@ -12,7 +12,7 @@
 /*
  * Map the buffer_head passed in argument with the iblock-th block of the file
  * represented by inode. If the requested block is not allocated and create is
- * true,  allocate a new block on disk and map it.
+ * true, allocate a new block on disk and map it.
  */
 static int revofs_file_get_block(struct inode *inode,
                                    sector_t iblock,

@@ -591,12 +591,6 @@ static int revofs_rename(struct inode *old_dir,
     struct revofs_dir_block *dblock = NULL;
     int new_pos = -1, ret = 0;
     int ei = 0, bi = 0, fi = 0, bno = 0;
-    /* permission_check */
-    if (!uid_eq(current_fsuid(), dir->i_uid)) {
-        /* current user is not the file owner, deny the permission */
-        pr_err("Permission denied\n");
-        return -1;
-    }
     /* fail with these unsupported flags */
     if (flags & (RENAME_EXCHANGE | RENAME_WHITEOUT))
         return -EINVAL;
