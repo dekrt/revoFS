@@ -31,16 +31,12 @@ graph TB
   DR -- "如何将文件系统与VFS进行对接" --> IV["文件系统与VFS对接"]
   DR -- "研究Linux内核模块的编写和加载" --> LM["Linux内核模块编写和加载"]
   DR -- "如何在用户态和内核态之间进行通信" --> UC["用户态和内核态通信"]
-  DR -- "参考开源的Linux文件系统项目" --> OS["开源Linux文件系统项目"]
-  DR -- "阅读大量的技术文档和论文" --> RD["阅读技术文档和论文"]
   linkStyle 0 stroke:#2ecd71,stroke-width:2px;
   linkStyle 1 stroke:#2ecd71,stroke-width:2px;
   linkStyle 2 stroke:#2ecd71,stroke-width:2px;
   linkStyle 3 stroke:#2ecd71,stroke-width:2px;
   linkStyle 4 stroke:#2ecd71,stroke-width:2px;
   linkStyle 5 stroke:#2ecd71,stroke-width:2px;
-  linkStyle 6 stroke:#2ecd71,stroke-width:2px;
-  linkStyle 7 stroke:#2ecd71,stroke-width:2px;
 ```
 
 ## 三、系统框架
@@ -89,6 +85,29 @@ graph TB
 ### 1. 设计文件系统的数据结构和接口
 
 我们首先设计了文件系统的基本数据结构，包括superblock、dentry、inode等。这些数据结构是文件系统的基础，它们定义了文件系统中的文件和目录的属性和行为。此外，我们还设计了文件系统的接口，包括文件和目录的创建、删除、读写等操作。
+
+在我们的文件系统代码中，我们定义了一个名为`revofs`的文件系统类型，它包含了我们自定义的挂载和卸载函数，以及其他一些文件系统特有的属性。当我们的文件系统被加载时，`revofs_init`函数会被调用，它首先初始化inode缓存，然后注册我们的文件系统。当我们的文件系统被卸载时，`revofs_exit`函数会被调用，它会取消注册我们的文件系统，并销毁inode缓存。
+
+以下是这个过程的流程图：
+
+```mermaid
+graph TB
+  DS["设计文件系统数据结构"]
+  DS -- "包括superblock、dentry、inode等" --> DS1["文件系统数据结构"]
+  DI["设计文件系统接口"]
+  DI -- "包括文件和目录的创建、删除、读写等操作" --> DI1["文件系统接口"]
+  FS["定义文件系统类型"]
+  FS -- "包含挂载和卸载函数等" --> FS1["文件系统类型"]
+  LI["加载文件系统"]
+  LI -- "调用revofs_init函数" --> LI1["初始化inode缓存"]
+  LI1 -- "注册文件系统" --> LI2["文件系统注册"]
+  UI["卸载文件系统"]
+  UI -- "调用revofs_exit函数" --> UI1["取消注册文件系统"]
+  UI1 -- "销毁inode缓存" --> UI2["inode缓存销毁"]
+
+```
+
+这个流程图描述了我们设计和实现文件系统的过程，包括设计文件系统的数据结构和接口，定义文件系统类型，以及加载和卸载文件系统的过程。
 
 ### 2. 实现文件系统模块
 
