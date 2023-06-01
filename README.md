@@ -92,10 +92,10 @@ graph TB
 
 ```mermaid
 graph TB
-  DS["设计文件系统数据结构"]
+  DS["设计数据结构和接口"]
   DS -- "包括superblock、dentry、inode等" --> DS1["文件系统数据结构"]
-  DI["设计文件系统接口"]
-  DI -- "包括文件和目录的创建、删除、读写等操作" --> DI1["文件系统接口"]
+  DI["实现文件系统模块"]
+  DI -- "包括文件和目录的读写操作" --> DI1["文件系统模块"]
   FS["定义文件系统类型"]
   FS -- "包含挂载和卸载函数等" --> FS1["文件系统类型"]
   LI["加载文件系统"]
@@ -104,7 +104,6 @@ graph TB
   UI["卸载文件系统"]
   UI -- "调用revofs_exit函数" --> UI1["取消注册文件系统"]
   UI1 -- "销毁inode缓存" --> UI2["inode缓存销毁"]
-
 ```
 
 这个流程图描述了我们设计和实现文件系统的过程，包括设计文件系统的数据结构和接口，定义文件系统类型，以及加载和卸载文件系统的过程。
@@ -112,6 +111,34 @@ graph TB
 ### 2. 实现文件系统模块
 
 在设计了数据结构和接口之后，我们开始实现文件系统模块。文件系统模块是运行在Linux内核态的部分，它负责处理文件和目录的读写操作。我们实现了superblock、dentry、inode的读写操作，并将新创建的文件系统的操作接口与VFS进行对接。
+
+在设计数据结构和接口阶段，我们首先设计了文件系统的基本数据结构，包括superblock、dentry、inode等。这些数据结构是文件系统的基础，它们定义了文件系统中的文件和目录的属性和行为。此外，我们还设计了文件系统的接口，包括文件和目录的创建、删除、读写等操作。
+
+在实现文件系统模块阶段，我们开始实现文件系统模块。文件系统模块是运行在Linux内核态的部分，它负责处理文件和目录的读写操作。我们实现了superblock、dentry、inode的读写操作，并将新创建的文件系统的操作接口与VFS进行对接。
+
+
+
+```mermaid
+graph TB
+  IM["实现文件系统模块"]
+  IM -- "superblock的读写操作" --> SBRW["superblock读写"]
+  IM -- "dentry的读写操作" --> DERW["dentry读写"]
+  IM -- "inode的读写操作" --> INRW["inode读写"]
+  IM -- "操作接口与VFS进行对接" --> VFS["VFS对接"]
+  linkStyle 0 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 1 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 2 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 3 stroke:#2ecd71,stroke-width:2px;
+```
+
+接下来，我们来看一下代码文件`fs.c`的内容。这个文件包含了文件系统模块的实现。主要的函数包括：
+
+- `revofs_mount`：挂载revofs分区
+- `revofs_kill_sb`：卸载revofs分区
+- `revofs_init`：初始化revofs，包括创建inode缓存和注册文件系统
+- `revofs_exit`：退出revofs，包括卸载文件系统和销毁inode缓存
+
+这些函数实现了文件系统模块的基本功能，包括挂载和卸载文件系统，以及初始化和退出文件系统。
 
 ### 3. 设计并实现用户态应用程序
 
