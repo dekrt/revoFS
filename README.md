@@ -54,16 +54,14 @@ revoFS项目的系统框架主要由两部分组成：**内核态的文件系统
 以下是这个过程的流程图：
 ```mermaid
 graph TB
-  BC["开始编译 kernel module 和 tool"]
-  BC -- "编译完成" --> GI["开始生成测试 image"]
-  GI -- "测试 image 生成完成" --> LKM["开始加载 revofs.ko"]
-  LKM -- "kernel module 加载完成" --> CTDI["开始创建测试目录和测试镜像"]
-  CTDI -- "测试目录和测试镜像创建完成" --> MKFS["开始使用 mkfs.revofs 工具创建文件系统"]
-  MKFS -- "文件系统test.img创建完成" --> MT["开始挂载测试镜像"]
-  MT -- "测试镜像挂载到/mnt/test" --> FSOP["开始执行文件系统读写以及权限测试操作"]
-  FSOP -- "文件系统操作完成" --> UM["开始卸载 kernel mount point 和 module"]
-  UM -- "kernel mount point 和 module 卸载完成" --> CC["make clean"]
-  CC -- "构建环境清理完成" --> END["结束"]
+  BC["编译 kernel module 和 tool"]
+  BC --> LKM["加载 revofs.ko"]
+  LKM --> CTDI["创建测试目录和测试镜像"]
+  CTDI --> MKFS["使用 mkfs.revofs 工具创建文件系统"]
+  MKFS --> MT["挂载测试镜像"]
+  MT --> FSOP["执行文件系统读写以及权限测试操作"]
+  FSOP --> UM["卸载 kernel mount point 和 module"]
+  UM --> END["结束"]
   linkStyle 0 stroke:#2ecd71,stroke-width:2px;
   linkStyle 1 stroke:#2ecd71,stroke-width:2px;
   linkStyle 2 stroke:#2ecd71,stroke-width:2px;
@@ -71,8 +69,6 @@ graph TB
   linkStyle 4 stroke:#2ecd71,stroke-width:2px;
   linkStyle 5 stroke:#2ecd71,stroke-width:2px;
   linkStyle 6 stroke:#2ecd71,stroke-width:2px;
-  linkStyle 7 stroke:#2ecd71,stroke-width:2px;
-  linkStyle 8 stroke:#2ecd71,stroke-width:2px;
 ```
 
 这个流程图描述了我们设计和实现文件系统的过程，包括文件系统的加载和卸载过程。
@@ -142,11 +138,29 @@ graph TB
 
 ### 3. 设计并实现用户态应用程序
 
-我们设计并实现了一个用户态应用程序，该程序能够将一个块设备（可以用文件模拟）格式化成我们设计的文件系统的格式。这个应用程序运行在用户态，可以直接由用户操作。应用程序的主要功能是将块设备格式化成我们的文件系统格式，这样用户就可以在这个设备上创建文件和目录，进行读写操作。
+我们设计并实现了一个用户态应用程序，该程序能够将一个块设备（可以用文件模拟）格式化成我们设计的文件系统的格式。这个应用程序运行在用户态，可以直接由用户操作。
 
+应用程序的主要功能是将块设备格式化成我们的文件系统格式，这样用户就可以在该应用程序中创建文件和目录，进行读写操作。
+
+
+```mermaid
+graph TB
+	WS["write_superblock()"]
+  WS -- "初始化和写入文件系统的元数据，包括块和节点的数量等" --> WIS["write_inode_store()"]
+  WIS -- "初始化和写入inode存储区块，包括设置根inode" --> WIFB["write_ifree_blocks()"]
+  WIFB -- "初始化和写入inode空闲位图，标记空闲和使用的inode" --> WBFB["write_bfree_blocks()"]
+  WBFB -- "初始化和写入块空闲位图，标记空闲和使用的块" --> WDB["write_data_blocks()"]
+```
+
+让我们来看一下代码文件`mkfs.c`的内容。这个文件包含了文件系统格式化的实现。主要的函数包括：
+
+- `write_superblock()`：初始化superblock结构
+- `write_inode_store()`：初始化inode存储区块
+- `write_ifree_blocks()`：初始化和写入inode空闲位图
+- `write_bfree_blocks()`：初始化和写入block空闲位图
 ### 4. 编写测试用例
 
-在实现了文件系统模块和用户态应用程序之后，我们编写了一系列测试用例，用于验证我们的文件系统的功能。我们的测试用例包括文件和目录的创建、删除、读写，以及文件权限的设置和检查。
+在实现了文件系统模块和用户态应用程序之后，我们会以一段精心设计的测试脚本，来展示我们文件系统的功能以及整个生命周期，以及用于验证我们的文件系统的功能。我们的测试脚本包括文件和目录的创建、删除、读写，以及文件权限的设置和检查。
 
 通过这个设计开发计划，我们成功地实现了一个可以进行文件和目录的读写操作的Linux文件系统。我们的文件系统在所有测试用例下都表现良好，证明了我们的设计和实现是正确的。
 
@@ -154,9 +168,89 @@ graph TB
 
 在比赛过程中，我们成功地实现了文件系统模块，并在用户态应用程序中完成了块设备的格式化。我们还编写了一系列测试用例，验证了我们的文件系统的功能。
 
+### 1. 团队组建
+
+在一些机缘巧合之中，我们的团队似乎与操作系统大赛有一些冥冥之中的注定。起初，是与团队苏曙光老师的简单交流，到后来他询问我们是否要参加操作系统比赛，经过深思熟虑与审慎思考，我们最终决定克服困难，在操作系统大赛的舞台上绽放自己的光芒。我们的团队由两位有着共同目标和热情的成员组成。我们每个人都有着不同的技能和经验，这使我们能够从多个角度来解决问题；同时团队拥有一位特别优秀的指导老师，能够及时给予我们帮助。
+
+### 2. 创意产生
+
+在团队组建之后，我们进行了一系列的头脑风暴会议，产生了我们项目的初始想法。我们评估了每个想法的可行性和潜力，最终选择了我们认为最适合我们的项目方向——Proj209，自己开发一个文件系统。这听起来太酷啦！
+
+### 3. 编码和开发
+
+在确定了项目方向后，我们开始了编码和开发阶段。在期末考试月我们仍勤耕不倦，两点睡七点起的情况时有发生，只为能更快的补足自己在专业知识上的空缺，更好的完成我们的项目。我们的团队成员分工合作，每个人都在他们擅长的领域贡献了自己的力量。
+
+### 4. 测试和调试
+
+在开发完成后，我们进行了一系列的测试和调试，以确保我们的项目能够正常运行并满足比赛的要求。这个阶段非常关键，它帮助我们发现并修复了项目中的问题。我们编写了测试脚本与加载脚本，让我们的文件系统以更好的方式得到展现，同时添加了诸多提示信息，经过测试，我们的文件系统能够很好的完成我们的功能。
+
+### 5. 最终提交
+
+在我们满意我们的项目并确信它已经准备好了比赛后，我们进行了最终的提交。这标志着我们的比赛过程的结束，但我们从中学到的经验和技能将继续陪伴我们。
+
+以上就是我们在比赛过程中的重要进展。每个阶段都是我们团队努力和合作的结果，我们为我们所取得的成就感到自豪。
+
 ## 六、系统测试情况
 
-我们的文件系统在各种测试用例下都表现良好。我们验证了文件和目录的读写操作，以及权限属性的正确性。
+我们的文件系统在各种测试用例下都表现良好。我们验证了文件和目录的读写操作，以及权限属性的正确性。为了方便我们验证，我们编写了`setup.sh`脚本，方便用户一键挂载我们的文件系统：
+
+![setup](./pics/setup.png)
+
+在代码文件夹下运行`setup.sh`，会先对模块使用`make`命令进行编译。
+
+![SS_complie](./pics/SS_complie.png)
+
+随后使用`make test.img`命令生成测试映像。
+
+![SS_image](./pics/SS_image.png)
+
+使用下列命令在`/mnt`创建一个50M的`test`分区
+
+```shell
+sudo mkdir -p /mnt/test
+dd if=/dev/zero of=test.img bs=1M count=50
+```
+
+![SS_create](./pics/SS_create.png)
+
+使用`mkfs.revofs`工具创建文件系统,挂载测试镜像，并将其挂载到/mnt/test：
+```shell
+./mkfs.revofs test.img
+sudo mount -o loop -t revofs test.img /mnt/test
+```
+
+![SS_mount](./pics/SS_mount.png)
+
+此时，我们的文件系统已经创建完成，开始进行读写测试(as root)：
+
+ ```shell
+ sudo su
+ echo "OSCOMP 2023 " > /mnt/test/hello
+ ls -lR /mnt/test
+ cat /mnt/test/hello
+ exit
+ ```
+
+![SS_test](./pics/SS_test.png)
+
+同时，进行不同用户不同操作权限的验证：
+
+```shell
+echo "echo \"OSCOMP 2023\" > /mnt/test/hello" 
+echo "OSCOMP 2023 " > /mnt/test/hello
+```
+
+![SS_test_noroot](./pics/SS_test_noroot.png)
+
+测试完成后，对模块进行卸载以及`make clean`
+
+```shell
+sudo umount /mnt/test
+sudo rmmod revofs
+make clean
+```
+
+![SS_umount](./pics/SS_umount.png)
 
 ## 七、遇到的主要问题和解决方法
 
@@ -180,35 +274,48 @@ graph TB
 
 我们的团队成员分工明确，协作紧密。我们共同参与了文件系统的设计和实现，每个人都在自己的领域内发挥了重要作用。
 
+| 功能点             | 负责人          | 备注 |
+| ------------------ | --------------- | ---- |
+| 项目前期选题、规划 | 陈德霆 / 张骁凯 | 无   |
+| 项目编码工作       | 陈德霆 / 张骁凯 | 无   |
+| 项目文档的撰写     | 陈德霆 / 张骁凯 | 无   |
+| 技术指导           | 苏曙光老师      | 无   |
+
 ## 九、提交仓库目录和文件描述
 
-我们的代码和文档都存储在我们的的GitHub仓库中。以下是我们的仓库目录和文件描述：
+我们的代码和文档都存储在我们的的Gitlab仓库中。以下是我们的仓库目录和文件描述：
 
 ```
-revoFS
+.revoFS/
+│  .gitignore
 │  README.md
-│  setup.sh
 │
 ├─code
-│      .clang-format
-│      .gitignore
-│      bitmap.h
-│      dir.c
-│      extent.c
-│      file.c
-│      fs.c
-│      inode.c
-│      LICENSEs
-│      Makefile
-│      mkfs.c
-│      revofs.h
-│      super.c
-│
-├─pics
-│      revoFS.jpg
-│
-└─script
-        test.sh
+│  │  .clang-format
+│  │  bitmap.h
+│  │  dir.c
+│  │  extent.c
+│  │  file.c
+│  │  fs.c
+│  │  inode.c
+│  │  Makefile
+│  │  mkfs.c
+│  │  revofs.h
+│  │  setup.sh
+│  │  super.c
+│  │  test.sh
+│  │
+│  └─test
+└─pics
+        revoFS.jpg
+        setup.png
+        SS_complie.png
+        SS_create.png
+        SS_image.png
+        SS_mount.png
+        SS_test.png
+        SS_test_noroot.png
+        SS_umount.png
 ```
 
 ## 十、比赛收获
