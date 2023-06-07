@@ -354,6 +354,51 @@ static int revofs_write_inode(struct inode *inode,
 
 > 目标3：实现新文件系统的权限属性，不同的用户不同的操作属性。
 
+为了测试任务3，我们编写了`pri.sh`脚本：
+
+```shell
+#!/bin/bash
+
+# 编译 kernel module 和 tool
+
+make > /dev/null 2>&1
+
+# 加载 kernel module
+
+sudo insmod revofs.ko
+
+sudo mkdir -p /mnt/test
+dd if=/dev/zero of=test.img bs=1M count=50
+./mkfs.revofs test.img
+sudo mount -o loop -t revofs test.img /mnt/test
+
+sleep 2
+# 执行一些文件系统操作
+echo -e "\n"
+echo "准备完成，开始执行文件系统操作..."
+sudo su <<EOF
+echo -e "\n"
+echo  "×××××××××××××××××××××××××××××××××××××××××××××××××"
+# 在root下创建多个测试文件测试权限操作
+    echo "在root用户权限下创建文件test1"
+    echo "命令：echo \"OSCOMP2023\" > /mnt/test/test1"
+    echo "OSCOMP2023" > /mnt/test/test1
+    ls -lR /mnt/test
+    echo -e "\n"
+exit
+EOF
+echo "尝试在普通用户权限下写入test1文件"
+echo "echo \"write test\" >>/mnt/test/hello" 
+echo "write test" >>/mnt/test/hello 
+echo "访问失败，权限不足"
+echo  "×××××××××××××××××××××××××××××××××××××××××××××××××"
+echo "权限操作验证成功"
+sudo umount /mnt/test
+sudo rmmod revofs
+sleep 1
+make clean > /dev/null 2>&1
+```
+
 启动测试脚本`pri.sh`，首先会在root权限下创建了一个文件test1，用ls命令可以查看当前文件的读写权限，当其他用户试图在test1写入字符时，该操作是不允许的。可以看到，访问失败，权限不够，权限测试结果符合预期。
 
 ![SS_pri](./pics/SS_pri.png)
@@ -362,7 +407,100 @@ static int revofs_write_inode(struct inode *inode,
 
 > 目标4：实现和用户态程序的对接，用户程序
 
+为了测试任务4，我们编写了`setup.sh`脚本：
 
+```shell
+#!/bin/bash
+
+# 编译 kernel module 和 tool
+echo "开始编译 kernel module 和 tool..."
+make
+echo "编译完成！"
+echo -e "\n"
+sleep 1
+
+# 加载 kernel module
+
+echo "开始加载 kernel module..."
+sudo insmod revofs.ko
+echo "kernel module 加载完成！"
+echo -e "\n"
+sleep 1
+
+# 创建测试目录和测试镜像
+echo "开始创建测试目录和测试镜像..."
+sudo mkdir -p /mnt/test
+dd if=/dev/zero of=test.img bs=1M count=50
+echo "测试目录：/mnt/test"
+echo "镜像名：test.img"
+echo "镜像大小：50MB"
+echo -e "\n"
+sleep 1
+
+# 使用mkfs.revofs工具创建文件系统
+echo "开始使用 mkfs.revofs 工具创建文件系统..."
+./mkfs.revofs test.img
+echo "文件系统test.img创建完成！"
+echo -e "\n"
+sleep 1
+
+# 挂载测试镜像
+echo "开始挂载测试镜像..."
+sudo mount -o loop -t revofs test.img /mnt/test
+echo "测试镜像挂载到/mnt/test！"
+echo -e "\n"
+sleep 1
+
+# 检查挂载成功的 kernel 消息
+#dmesg | tail
+
+# 执行一些文件系统操作
+echo "xxxxxxxxxxxxxxxxxxxxxx开始执行文件系统操作xxxxxxxxxxxxxxxxxxxxxxxx"
+sudo su <<EOF
+echo "touch test start"
+echo "输入:touch /mnt/test/fstest"
+touch /mnt/test/fstest
+ls /mnt/test/
+echo "touch test end"
+echo "cd test start"
+echo "输入:cd /mnt/test/"
+cd /mnt/test/
+echo "cd test end"
+echo "echo test start"
+echo "在root下创建文本并输入字符串"
+echo "命令：echo "OSCOMP 2023 " > /mnt/test/fstest"
+echo "OSCOMP 2023 " > /mnt/test/hello
+ls -lR /mnt/test
+echo "cat输出文本内容"
+cat /mnt/test/hello
+echo "echo test end"
+echo "rm test start"
+echo "输入:rm /mnt/test/fstest" 
+rm /mnt/test/fstest
+ls /mnt/test/
+echo "rm test end"exit
+EOF
+
+echo "在普通用户下尝试对hello进行写操作"
+echo "echo \"OSCOMP 2023\" > /mnt/test/hello" 
+echo "OSCOMP 2023 " > /mnt/test/hello
+echo "文件的权限属性测试成功"
+echo -e "\n"
+sleep 1
+echo "文件系统操作完成！"
+echo -e "\n"
+sleep 1
+# 卸载 kernel mount point 和 module
+echo "开始卸载 kernel mount point 和 module..."
+sudo umount /mnt/test
+sudo rmmod revofs
+echo "kernel mount point 和 module 卸载完成！"
+echo -e "\n"
+sleep 1
+echo "开始清理构建环境..."
+make clean
+echo "构建环境清理完成！"
+```
 
 ### 5. 目标5的测试
 
@@ -376,11 +514,9 @@ static int revofs_write_inode(struct inode *inode,
 
 > 目标6：设计用户态测试程序，验证新文件系统的`open/read/write/ls/cd `等操作。
 
- 编写了`setup.sh`测试脚本。测试内容包括但不限于新文件系统的挂载和卸载，文件的读、写、增、删、改、查等功能。
+与目标4类似，我们编写了`setup.sh`测试脚本。测试内容包括但不限于新文件系统的挂载和卸载，文件的读、写、增、删、改、查等功能。
 
 ![SS_setup](./pics/SS_setup.png)
-
-
 
 ## 七、遇到的主要问题和解决方法
 
@@ -419,30 +555,36 @@ static int revofs_write_inode(struct inode *inode,
 .revoFS/
 │  .gitignore
 │  README.md
+│  README.pdf
 │
 ├─code
-│  │  .clang-format
-│  │  bitmap.h
-│  │  dir.c
-│  │  extent.c
-│  │  file.c
-│  │  fs.c
-│  │  inode.c
-│  │  Makefile
-│  │  mkfs.c
-│  │  revofs.h
-│  │  setup.sh
-│  │  super.c
-│  │  test.sh
-│  │
-│  └─test
+│      .clang-format
+│      bitmap.h
+│      dir.c
+│      extent.c
+│      file.c
+│      fs.c
+│      hello1
+│      inode.c
+│      Makefile
+│      mkfs.c
+│      pri.sh
+│      revofs.h
+│      rw_test.sh
+│      setup.sh
+│      super.c
+│
 └─pics
+        000000.png
         revoFS.jpg
         setup.png
         SS_complie.png
         SS_create.png
         SS_image.png
+        SS_mkfs.png
         SS_mount.png
+        SS_pri.png
+        SS_setup.png
         SS_test.png
         SS_test_noroot.png
         SS_umount.png
