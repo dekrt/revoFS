@@ -7,21 +7,19 @@
 	<h1 align = "center">revoFS</h1>    
     <h4 align = "center">proj209-Linux-Custom-Filesystem</h4>
 </div>
-
-
 ## 一、目标描述
 
 项目的基本目标是设计并实现一个Linux文件系统，本团队设计的文件系统取名`revoFS`，意为<font color = "red">revo</font>lution + <font color = "red">F</font>ile<font color = "red">S</font>ystem，即革命性的文件系统。新设计的revoFS文件系统不仅实现了传统文件系统的读、写、增、删、改、查等全部功能，还实现了内核日志打印到用户空间和文件系统可视化等创新性功能。
 
 在功能上，新设计的revoFS文件系统能够支持文件系统的全部功能，包括：**文件系统的挂载和卸载功能，文件和目录的读和写操作，改名操作，属性修改**等。在技术细节上，我们创建了一个专门的Linux内核模块，用于将新设计的revoFS文件系统与现有的虚拟文件系统VFS框架进行对接，并实现了VFS框架要求的superblock、dentry、inode等数据结构和读写接口。此外，还设计并实现了用户态的应用程序，用于将特定的存储设备（也可以是文件模拟的存储设备）格式化成新设计的revoFS文件系统。
 
-赛题预定的目标有6条 <font color="#9933FF"><b>(全部已完成)</b></font> ：
+赛题预定的目标有6条 <font color="#9933FF"><b>(全部已完成)</b></font> 
 
 - **目标1**  <font color="#9933FF"><b>(已完成)</b></font>：实现新文件系统与虚拟文件系统VFS之间的接口。
 
 - **目标2** <font color="#9933FF"><b>(已完成)</b></font>：实现新文件系统的superblock、dentry、inode的读写操作。
 - **目标3** <font color="#9933FF"><b>(已完成)</b></font>：实现新文件系统的权限属性，不同的用户不同的操作属性。
-- **目标4** <font color="#9933FF"><b>(已完成)</b></font>：实现和用户态程序的对接，用户程序
+- **目标4** <font color="#9933FF"><b>(已完成)</b></font>：实现和用户态程序的对接。
 - **目标5** <font color="#9933FF"><b>(已完成)</b></font>：实现将一个块设备（可以用文件模拟）格式化成自己设计的文件系统的格式。
 - **目标6** <font color="#9933FF"><b>(已完成)</b></font>：设计用户态测试程序，验证新文件系统的`open/read/write/ls/cd`等操作。 
 
@@ -29,31 +27,21 @@
 
 项目的基本目标是设计并实现一个Linux文件系统。根据文件系统的工作原理和层次结构，可以把项目需求分为三个部分：
 
-（1）文件系统的加载，卸载，格式化；
+1. **文件系统的挂载，格式化，卸载：**新设计的文件系统对应的内核模块应该能够正常的挂载到Linux系统上，经过编译与安装后，新设计的文件系统可以将特定的存储设备（也可以是文件模拟的存储设备）格式化成revoFS文件系统；在使用、测试完成之后，也可以正常的进行卸载操作，释放被格式化的空间。
 
-（2）文件恶化目录的打开，读写，关闭，改名；
+2. **文件系统目录的打开、读写、关闭、改名：**新设计的文件系统可以对存储空间上的文件进行打开、读取、写入、关闭、重命名等操作，这是一个文件系统的基本功能。
 
-（3）文件属性的修改；
+3. **文件属性的修改：**新设计的文件系统应该实现不同用户拥有不同的操作竖向，即只有创建文件的用户拥有修改的权限，对于其他的用户只拥有读取的权限。同时，可以使用`chmod`命令修改文件的属性。
 
-（4）编写应用测试程序，演示和测试目标文件系统的读/写等功能是否正常。
+4. **编写测试应用程序**：新设计的文件系统应当设计一个演示和测试目标文件系统的读、写等功能是否正常的测试应用程序，以验证新设计的文件系统的功能。
 
-在设计上，根据文件系统的层次结构，分为三个步骤：
+在设计上，根据文件系统的层次结构，可以将我们的设计过程分成分为三个步骤：
 
-（1）VFS接口
+1. **VFS接口**：新设计的文件系统需要设计和实现VFS接口，使得文件系统能够与Linux内核进行交互；同时，我们还设计了netlink套接口，实现内核空间与用户空间的通信，使文件系统对用户的操作进行实时的反馈。
+2. **重要数据接口的设计和实现**：新设计的文件系统需要实现inode，dentry和superblock的功能。 这部分需要设计和实现三个重要的数据接口，包括inode接口，dentry接口和superblock接口，用于实现文件系统的基本功能。
+3. **编写应用测试程序**：新设计的文件系统需要编写应用测试程序，用于演示和测试目标文件系统的读写等功能是否正常
 
-
-
-（2）三个重要数据接口的设计和接口实现，实现.......功能。
-
-
-
-（3）编写应用测试程序，演示和测试目标文件系统的读/写等功能是否正常。
-
-
-
-
-
-在开始设计和实现文件系统之前，我们进行了深入的资料调研。研究了Linux内核的文件系统框架，了解了VFS（Virtual File System，虚拟文件系统）的工作原理，以及如何将文件系统与VFS进行对接。VFS是Linux内核中的一个重要组件，它提供了一个抽象层，使得用户程序可以透明地访问各种不同类型的文件系统。VFS支持多个文件系统。Linux内核完成大部分工作，而文件系统特定的任务则委托给各个文件系统通过处理程序来完成。内核并不直接调用函数，而是使用各种操作表，这些操作表是每个操作的处理程序的集合（实际上是每个处理程序/回调的函数指针的结构）。
+随后，我们进行了深入的资料调研，研究了Linux内核的文件系统框架，了解了VFS（Virtual File System，虚拟文件系统）的工作原理，以及如何将文件系统与VFS进行对接。VFS是Linux内核中的一个重要组件，它提供了一个抽象层，使得用户程序可以透明地访问各种不同类型的文件系统。VFS支持多个文件系统。Linux内核完成大部分工作，而文件系统特定的任务则委托给各个文件系统通过处理程序来完成。内核并不直接调用函数，而是使用各种操作表，这些操作表是每个操作的处理程序的集合（实际上是每个处理程序/回调的函数指针的结构）。
 
 我们还研究了Linux内核模块的编写和加载，以及如何在用户态和内核态之间进行通信。Linux内核模块是一种可以动态加载和卸载的内核代码，它可以在不重启系统的情况下添加或删除内核功能。用户态和内核态的通信是操作系统设计中的一个重要问题，通过研究系统调用、文件系统接口等技术，了解了如何在用户态程序和内核态模块之间传递信息。
 
@@ -63,19 +51,24 @@
 
 ```mermaid
 graph TB
-  SD["开始设计和实现文件系统"]
-  SD -- "进行深入的资料调研" --> DR["资料调研"]
-  DR -- "研究Linux内核的文件系统框架" --> LK["Linux内核文件系统框架"]
-  DR -- "了解VFS的工作原理" --> VFS["VFS工作原理"]
-  DR -- "如何将文件系统与VFS进行对接" --> IV["文件系统与VFS对接"]
-  DR -- "研究Linux内核模块的编写和加载" --> LM["Linux内核模块编写和加载"]
-  DR -- "如何在用户态和内核态之间进行通信" --> UC["用户态和内核态通信"]
+  A["项目目标：设计并实现一个Linux文件系统"]
+  A --> B["文件系统的挂载，格式化，卸载"]
+  A --> C["文件系统目录的操作：打开，读写，关闭，改名"]
+  A --> D["文件属性的修改"]
+  A --> E["编写测试应用程序"]
+  A --> F["设计步骤"]
+  F --> G["VFS接口"]
+  F --> H["设计和实现重要的数据接口"]
+  F --> I["编写测试应用程序"]
   linkStyle 0 stroke:#2ecd71,stroke-width:2px;
   linkStyle 1 stroke:#2ecd71,stroke-width:2px;
   linkStyle 2 stroke:#2ecd71,stroke-width:2px;
   linkStyle 3 stroke:#2ecd71,stroke-width:2px;
   linkStyle 4 stroke:#2ecd71,stroke-width:2px;
   linkStyle 5 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 6 stroke:#2ecd71,stroke-width:2px;
+  linkStyle 7 stroke:#2ecd71,stroke-width:2px;
+
 ```
 
 ## 三、系统框架
@@ -218,7 +211,176 @@ graph TB
 - **目标5 **<font color="#9933FF"><b>(已完成)</b></font>：实现将一个块设备（可以用文件模拟）格式化成自己设计的文件系统的格式。
 - **目标6 **<font color="#9933FF"><b>(已完成)</b></font>：设计用户态测试程序，验证新文件系统的`open/read/write/ls/cd `等操作。 
 
-## 1. 目标1的测试
+### 1. 目标1的测试
+
+> 目标1：实现新文件系统与虚拟文件系统VFS之间的接口
+
+在`fs.c`文件中，我们可以看到新文件系统与虚拟文件系统VFS之间的接口实现。这个接口的实现主要包括两个部分：挂载（mount）和卸载（kill_sb）。
+
+挂载函数`revofs_mount`主要负责将新文件系统挂载到指定的设备上。这个函数首先调用`mount_bdev`函数，该函数接收文件系统类型、标志、设备名和数据等参数，并返回一个目录项（dentry）。如果返回的目录项出错，函数会打印出错信息；否则，函数会打印挂载成功的信息。
+
+```c
+/* Mount a revofs partition */
+struct dentry *revofs_mount(struct file_system_type *fs_type,
+                              int flags,
+                              const char *dev_name,
+                              void *data)
+{
+    struct dentry *dentry =
+        mount_bdev(fs_type, flags, dev_name, data, revofs_fill_super);
+    if (IS_ERR(dentry))
+        pr_err("'%s' mount failure\n", dev_name);
+    else
+        pr_info("'%s' mount success\n", dev_name);
+
+    return dentry;
+}
+```
+
+卸载函数`revofs_kill_sb`负责卸载新文件系统。这个函数调用`kill_block_super`函数来卸载文件系统，并打印卸载信息。
+
+```c
+/* Unmount a revofs partition */
+void revofs_kill_sb(struct super_block *sb)
+{
+    kill_block_super(sb);
+
+    pr_info("unmounted disk\n");
+}
+```
+
+在`revofs_init`函数中，我们可以看到文件系统类型`revofs_file_system_type`被注册到系统中。这个文件系统类型包括了文件系统的名称、挂载函数、卸载函数等信息。
+
+```c
+static int __init revofs_init(void)
+{
+    int ret = revofs_init_inode_cache();
+    if (ret) {
+        pr_err("inode cache creation failed\n");
+        goto end;
+    }
+
+    ret = register_filesystem(&revofs_file_system_type);
+    if (ret) {
+        pr_err("register_filesystem() failed\n");
+        goto end;
+    }
+
+    pr_info("module loaded\n");
+end:
+    return ret;
+}
+
+```
+
+在`revofs_exit`函数中，文件系统类型`revofs_file_system_type`被从系统中注销。
+
+```c
+static void __exit revofs_exit(void)
+{
+    int ret = unregister_filesystem(&revofs_file_system_type);
+    if (ret)
+        pr_err("unregister_filesystem() failed\n");
+
+    revofs_destroy_inode_cache();
+
+    pr_info("module unloaded\n");
+}
+```
+
+通过这些函数的实现，我们可以看到新文件系统与虚拟文件系统VFS之间的接口已经成功实现。我们可以通过挂载和卸载新文件系统来测试这个接口的实现是否正确。例如，我们可以在Linux系统中运行命令来挂载新文件系统，并通过查看文件系统的状态来验证挂载是否成功。同样，我们也可以运行命令来卸载新文件系统，并验证卸载是否成功。
+
+这个接口的实现是新文件系统能够在Linux系统中运行的基础，也是我们接下来测试其他目标的基础。
+
+### 2. 目标2的测试
+
+> 目标2：实现新文件系统的superblock、dentry、inode的读写操作。
+
+在这个目标中，我们需要测试新文件系统的superblock、dentry、inode的读写操作是否正常。我们可以通过编写测试用例，创建新的文件，读取文件，修改文件，删除文件等操作来进行测试。
+
+在代码中，我们可以看到`super.c`文件中实现了一些关于superblock的操作。例如，`revofs_write_inode`函数实现了inode的写操作，`revofs_fill_super`函数则是用于填充superblock的函数。这些函数的正确性是非常重要的，因为它们是文件系统的基础。下面给出了`revofs_write_inode`代码的实现。
+
+```c
+static int revofs_write_inode(struct inode *inode,
+                                struct writeback_control *wbc)
+{
+    struct revofs_inode *disk_inode;
+    struct revofs_inode_info *ci = REVOFS_INODE(inode);
+    struct super_block *sb = inode->i_sb;
+    struct revofs_sb_info *sbi = REVOFS_SB(sb);
+    struct buffer_head *bh;
+    uint32_t ino = inode->i_ino;
+    uint32_t inode_block = (ino / REVOFS_INODES_PER_BLOCK) + 1;
+    uint32_t inode_shift = ino % REVOFS_INODES_PER_BLOCK;
+
+    if (ino >= sbi->nr_inodes)
+        return 0;
+
+    bh = sb_bread(sb, inode_block);
+    if (!bh)
+        return -EIO;
+
+    disk_inode = (struct revofs_inode *) bh->b_data;
+    disk_inode += inode_shift;
+
+    /* update the mode using what the generic inode has */
+    disk_inode->i_mode = inode->i_mode;
+    disk_inode->i_uid = i_uid_read(inode);
+    disk_inode->i_gid = i_gid_read(inode);
+    disk_inode->i_size = inode->i_size;
+    disk_inode->i_ctime = inode->i_ctime.tv_sec;
+    disk_inode->i_atime = inode->i_atime.tv_sec;
+    disk_inode->i_mtime = inode->i_mtime.tv_sec;
+    disk_inode->i_blocks = inode->i_blocks;
+    disk_inode->i_nlink = inode->i_nlink;
+    disk_inode->ei_block = ci->ei_block;
+    strncpy(disk_inode->i_data, ci->i_data, sizeof(ci->i_data));
+
+    mark_buffer_dirty(bh);
+    sync_dirty_buffer(bh);
+    brelse(bh);
+
+    return 0;
+}
+```
+
+我们可以通过创建新的文件，然后使用`revofs_write_inode`函数来写入inode，然后再读取出来，检查写入的数据和读取的数据是否一致，来测试这个函数的正确性。同样的，我们也可以通过创建一个新的文件系统，然后填充superblock，然后再读取出来，检查填充的数据和读取的数据是否一致，来测试`revofs_fill_super`函数的正确性。
+
+对于dentry的读写操作，我们可以在`inode.c`文件中找到相关的实现。我们可以通过类似的方式来进行测试。
+
+这些测试可以帮助我们确保新文件系统的基本操作是正确的，这是实现一个稳定可用的文件系统的基础。
+
+### 3. 目标3的测试
+
+> 目标3：实现新文件系统的权限属性，不同的用户不同的操作属性。
+
+
+
+### 4. 目标4的测试
+
+> 目标4：实现和用户态程序的对接，用户程序
+
+
+
+### 5. 目标5的测试
+
+> 目标5：实现将一个块设备（可以用文件模拟）格式化成自己设计的文件系统的格式。
+
+
+
+### 6. 目标6的测试
+
+> 目标6：设计用户态测试程序，验证新文件系统的`open/read/write/ls/cd `等操作。 
+
+
+
+
+
+
+
+
+
+
 
 测试新设计的文件系统revoFS能否正确地格式化目标存储设备并挂载或卸载。测试结果是能正确格式化，且能正常挂载或卸载。详细测试过程描述如下。
 
