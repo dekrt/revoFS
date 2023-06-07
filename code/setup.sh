@@ -43,18 +43,30 @@ sleep 1
 #dmesg | tail
 
 # 执行一些文件系统操作
-echo "开始执行文件系统操作..."
+echo "xxxxxxxxxxxxxxxxxxxxxx开始执行文件系统操作xxxxxxxxxxxxxxxxxxxxxxxx"
 sudo su <<EOF
-echo -e "\n"
-echo "在root下创建hello文本并输入字符串"
-echo "命令：echo "OSCOMP 2023 " > /mnt/test/hello"
+echo "touch test start"
+echo "输入:touch /mnt/test/fstest"
+touch /mnt/test/fstest
+ls /mnt/test/
+echo "touch test end"
+echo "cd test start"
+echo "输入:cd /mnt/test/"
+cd /mnt/test/
+echo "cd test end"
+echo "echo test start"
+echo "在root下创建文本并输入字符串"
+echo "命令：echo "OSCOMP 2023 " > /mnt/test/fstest"
 echo "OSCOMP 2023 " > /mnt/test/hello
 ls -lR /mnt/test
-echo -e "\n"
 echo "cat输出文本内容"
 cat /mnt/test/hello
-echo -e "\n"
-exit
+echo "echo test end"
+echo "rm test start"
+echo "输入:rm /mnt/test/fstest" 
+rm /mnt/test/fstest
+ls /mnt/test/
+echo "rm test end"exit
 EOF
 
 echo "在普通用户下尝试对hello进行写操作"
