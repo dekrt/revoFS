@@ -354,7 +354,9 @@ static int revofs_write_inode(struct inode *inode,
 
 > 目标3：实现新文件系统的权限属性，不同的用户不同的操作属性。
 
+启动测试脚本`pri.sh`，首先会在root权限下创建了一个文件test1，用ls命令可以查看当前文件的读写权限，当其他用户试图在test1写入字符时，该操作是不允许的。可以看到，访问失败，权限不够，权限测试结果符合预期。
 
+![SS_pri](./pics/SS_pri.png)
 
 ### 4. 目标4的测试
 
@@ -366,88 +368,19 @@ static int revofs_write_inode(struct inode *inode,
 
 > 目标5：实现将一个块设备（可以用文件模拟）格式化成自己设计的文件系统的格式。
 
+通过mkfs程序将虚拟块设备格式化为新的文件系统，通过netlink套口获取内核模块的消息记录，消息包括，新的文件系统名，超级块结构，inode结点结构等。实现了将块设备格式化成新的文件系统的目标。
 
+![SS_mkfs](./pics/SS_mkfs.png)
 
 ### 6. 目标6的测试
 
-> 目标6：设计用户态测试程序，验证新文件系统的`open/read/write/ls/cd `等操作。 
+> 目标6：设计用户态测试程序，验证新文件系统的`open/read/write/ls/cd `等操作。
+
+ 编写了`setup.sh`测试脚本。测试内容包括但不限于新文件系统的挂载和卸载，文件的读、写、增、删、改、查等功能。
+
+![SS_setup](./pics/SS_setup.png)
 
 
-
-
-
-
-
-
-
-
-
-测试新设计的文件系统revoFS能否正确地格式化目标存储设备并挂载或卸载。测试结果是能正确格式化，且能正常挂载或卸载。详细测试过程描述如下。
-
-我们的文件系统在各种测试用例下都表现良好，验证了文件和目录的读写操作，以及权限属性的正确性。为了方便验证，编写了`setup.sh`脚本，方便用户一键挂载文件系统：
-
-![setup](./pics/setup.png)
-
-1.在代码文件夹下运行`setup.sh`，会先对模块使用`make`命令进行编译。**（已完成）**
-
-![SS_complie](./pics/SS_complie.png)
-
-2.使用`make test.img`命令生成测试映像。**（已完成）**
-
-![SS_image](./pics/SS_image.png)
-
-3.在`/mnt`创建一个50M的`test`分区   **（已完成）**
-
-```shell
-sudo mkdir -p /mnt/test
-dd if=/dev/zero of=test.img bs=1M count=50
-```
-
-![SS_create](./pics/SS_create.png)
-
-4.使用`mkfs.revofs`工具将块设备格式化为文件系统,,挂载测试镜像，并将其挂载到/mnt/test： **（已完成）** 
-
-```shell
-./mkfs.revofs test.img
-sudo mount -o loop -t revofs test.img /mnt/test
-```
-
-![SS_mount](./pics/SS_mount.png)
-
-**测试用例2：**测试新的文件系统devoFS在挂载完毕后能否正常实现读或写的操作。测试结果是能正确读和写。详细测试过程描述如下。
-
-
-
-5.文件系统已经创建完成，验证读写操作(as root)：**（已完成）**
-
- ```shell
- sudo su
- echo "OSCOMP 2023 " > /mnt/test/hello
- ls -lR /mnt/test
- cat /mnt/test/hello
- exit
- ```
-
-![SS_test](./pics/SS_test.png)
-
-6.验证文件系统的权限属性： **（已完成）**
-
-```shell
-echo "echo \"OSCOMP 2023\" > /mnt/test/hello" 
-echo "OSCOMP 2023 " > /mnt/test/hello
-```
-
-![SS_test_noroot](./pics/SS_test_noroot.png)
-
-7.测试完成后，对模块进行卸载以及`make clean` **（已完成）**
-
-```shell
-sudo umount /mnt/test
-sudo rmmod revofs
-make clean
-```
-
-![SS_umount](./pics/SS_umount.png)
 
 ## 七、遇到的主要问题和解决方法
 
