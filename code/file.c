@@ -5,7 +5,6 @@
 #include <linux/kernel.h>
 #include <linux/module.h>
 #include <linux/mpage.h>
-
 #include "bitmap.h"
 #include "revofs.h"
 

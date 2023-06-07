@@ -7,6 +7,9 @@
 #include <sys/stat.h>
 #include <linux/fs.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <linux/netlink.h>
+#include <errno.h>
 
 #include "revofs.h"
 
@@ -225,8 +228,94 @@ static int write_data_blocks(int fd, struct superblock *sb)
     return 0;
 }
 
+
+/********* NETLINK 传输有关定义*********/
+// 消息类型
+#define NETLINK_MSG_FOR_SCHIPS    30 // 不超过32
+// 端口号
+#define USER_PORT        123
+#define MSG_LEN         125
+#define MAX_PLOAD       MSG_LEN
+
+
+typedef struct _user_msg_info
+{
+    struct nlmsghdr hdr;
+    char  msg[MSG_LEN];
+} user_msg_info;
+
+
+
 int main(int argc, char **argv)
 {
+    int skfd;
+    int ret_nl;
+    user_msg_info u_info;
+    socklen_t len;
+    struct nlmsghdr *nlh = NULL;
+    struct sockaddr_nl bind_addr;
+    struct sockaddr_nl dest_addr;
+    char *umsg = "hello Revofs";
+
+    /* 创建NETLINK socket */
+    skfd = socket(AF_NETLINK, SOCK_RAW, NETLINK_MSG_FOR_SCHIPS);
+    if(skfd == -1)
+    {
+        perror("create socket error");
+        return -1;
+    }
+
+    memset(&bind_addr, 0, sizeof(bind_addr));
+    bind_addr.nl_family = AF_NETLINK; //AF_NETLINK
+    bind_addr.nl_pid = USER_PORT;  //端口号(port ID) 
+    bind_addr.nl_groups = 0;
+    if(bind(skfd, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) != 0)
+    {
+        perror("bind() error\n");
+        close(skfd);
+        return -1;
+    }
+
+    memset(&dest_addr, 0, sizeof(dest_addr));
+    dest_addr.nl_family = AF_NETLINK;
+    dest_addr.nl_pid = 0; // to kernel 
+    dest_addr.nl_groups = 0;
+
+    nlh = (struct nlmsghdr *)malloc(NLMSG_SPACE(MAX_PLOAD));
+    memset(nlh, 0, sizeof(struct nlmsghdr));
+    nlh->nlmsg_len = NLMSG_SPACE(MAX_PLOAD);
+    nlh->nlmsg_flags = 0;
+    nlh->nlmsg_type = 0;
+    nlh->nlmsg_seq = 0;
+    nlh->nlmsg_pid = bind_addr.nl_pid; //self port
+
+    memcpy(NLMSG_DATA(nlh), umsg, strlen(umsg));
+    ret_nl= sendto(skfd, nlh, nlh->nlmsg_len, 0, (struct sockaddr *)&dest_addr, sizeof(struct sockaddr_nl));
+    if(!ret_nl)
+    {
+        perror("sendto error");
+        close(skfd);
+        exit(-1);
+    }
+
+    memset(&u_info, 0, sizeof(u_info));
+    len = sizeof(struct sockaddr_nl);
+    ret_nl= recvfrom(skfd, &u_info, sizeof(user_msg_info), 0, (struct sockaddr *)&dest_addr, &len);
+    if(!ret_nl)
+    {
+        perror("recv form kernel error");
+        close(skfd);
+        exit(-1);
+    }
+
+    printf("from kernel:%s\n", u_info.msg);
+    
+    close(skfd);
+
+    free((void *)nlh);
+
+    //------------------------------
+
     if (argc != 2) {
         fprintf(stderr, "Usage: %s disk\n", argv[0]);
         return EXIT_FAILURE;
