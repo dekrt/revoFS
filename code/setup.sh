@@ -7,12 +7,6 @@ echo "编译完成！"
 echo -e "\n"
 sleep 1
 
-# 生成测试 image
-echo "开始生成测试 image..."
-make test.img
-echo "测试 image 生成完成！"
-echo -e "\n"
-sleep 1
 # 加载 kernel module
 
 echo "开始加载 kernel module..."
@@ -25,7 +19,9 @@ sleep 1
 echo "开始创建测试目录和测试镜像..."
 sudo mkdir -p /mnt/test
 dd if=/dev/zero of=test.img bs=1M count=50
-echo "测试目录和测试镜像创建完成！"
+echo "测试目录：/mnt/test"
+echo "镜像名：test.img"
+echo "镜像大小：50MB"
 echo -e "\n"
 sleep 1
 
@@ -51,12 +47,11 @@ echo "开始执行文件系统操作..."
 sudo su <<EOF
 echo -e "\n"
 echo "在root下创建hello文本并输入字符串"
-echo -e "\n"
+echo "命令：echo "OSCOMP 2023 " > /mnt/test/hello"
 echo "OSCOMP 2023 " > /mnt/test/hello
 ls -lR /mnt/test
 echo -e "\n"
 echo "cat输出文本内容"
-echo -e "\n"
 cat /mnt/test/hello
 echo -e "\n"
 exit
@@ -65,7 +60,7 @@ EOF
 echo "在普通用户下尝试对hello进行写操作"
 echo "echo \"OSCOMP 2023\" > /mnt/test/hello" 
 echo "OSCOMP 2023 " > /mnt/test/hello
-echo "权限设置测试成功"
+echo "文件的权限属性测试成功"
 echo -e "\n"
 sleep 1
 echo "文件系统操作完成！"

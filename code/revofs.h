@@ -2,7 +2,7 @@
 #define REVOFS_H
 
 /* source: https://en.wikipedia.org/wiki/Hexspeak */
-#define REVOFS_MAGIC 0xDEADCELL
+#define REVOFS_MAGIC 0x52455245
 
 #define REVOFS_SB_BLOCK_NR 0
 
@@ -28,21 +28,7 @@
 
 #define USER_NS_REQUIRED() LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0)
 
-/*
- * revofs partition layout
- * +---------------+
- * |  superblock   |  1 block
- * +---------------+
- * |  inode store  |  sb->nr_istore_blocks blocks
- * +---------------+
- * | ifree bitmap  |  sb->nr_ifree_blocks blocks
- * +---------------+
- * | bfree bitmap  |  sb->nr_bfree_blocks blocks
- * +---------------+
- * |    data       |
- * |      blocks   |  rest of the blocks
- * +---------------+
- */
+
 
 struct revofs_inode {
     uint32_t i_mode;   /* File mode */

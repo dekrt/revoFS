@@ -61,7 +61,7 @@ static struct superblock *write_superblock(int fd, struct stat *fstats)
 
     printf(
         "Superblock: (%ld)\n"
-        "\tmagic=%#x\n"
+        "\tmagic=%#x(RE)\n"
         "\tnr_blocks=%u\n"
         "\tnr_inodes=%u (istore=%u blocks)\n"
         "\tnr_ifree_blocks=%u\n"
