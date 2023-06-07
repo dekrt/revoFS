@@ -229,10 +229,9 @@ static int write_data_blocks(int fd, struct superblock *sb)
 }
 
 
-/********* NETLINK 传输有关定义*********/
-// 消息类型
-#define NETLINK_MSG_FOR_SCHIPS    30 // 不超过32
-// 端口号
+// message type
+#define NETLINK_MSG_FOR_SCHIPS    30 // no more than 32
+// The port number
 #define USER_PORT        123
 #define MSG_LEN         125
 #define MAX_PLOAD       MSG_LEN
@@ -257,7 +256,7 @@ int main(int argc, char **argv)
     struct sockaddr_nl dest_addr;
     char *umsg = "hello Revofs";
 
-    /* 创建NETLINK socket */
+    /* create NETLINK socket */
     skfd = socket(AF_NETLINK, SOCK_RAW, NETLINK_MSG_FOR_SCHIPS);
     if(skfd == -1)
     {
@@ -267,7 +266,7 @@ int main(int argc, char **argv)
 
     memset(&bind_addr, 0, sizeof(bind_addr));
     bind_addr.nl_family = AF_NETLINK; //AF_NETLINK
-    bind_addr.nl_pid = USER_PORT;  //端口号(port ID) 
+    bind_addr.nl_pid = USER_PORT;  //Port number (port ID)
     bind_addr.nl_groups = 0;
     if(bind(skfd, (struct sockaddr *)&bind_addr, sizeof(bind_addr)) != 0)
     {
@@ -314,7 +313,6 @@ int main(int argc, char **argv)
 
     free((void *)nlh);
 
-    //------------------------------
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s disk\n", argv[0]);

@@ -12,11 +12,13 @@
 
 
 
-// 消息类型
-#define NETLINK_MSG_FOR_SCHIPS    30 // 不超过32
-// 端口号
+/* message type*/
+#define NETLINK_MSG_FOR_SCHIPS    30 
+// no more than 32
+
+// The port number
 #define USER_PORT        123
-// 消息长度限制
+// message length limit
 #define MSG_LEN         125
 #define MAX_PLOAD       MSG_LEN
 
@@ -27,7 +29,8 @@ int send_usrmsg(char *pbuf, uint16_t len);
 static void netlink_rcv_msg(struct sk_buff *skb);
 
 struct netlink_kernel_cfg cfg = { 
-        .input  = netlink_rcv_msg, /* set recv callback */
+        .input  = netlink_rcv_msg, 
+        /* set recv callback */
 }; 
 
 int send_usrmsg(char *pbuf, uint16_t len)
@@ -36,7 +39,8 @@ int send_usrmsg(char *pbuf, uint16_t len)
     struct nlmsghdr *nlh;
     int ret_nl;
 
-    /* 创建sk_buff 空间 */
+  
+    /* Create sk_buff space */
     nl_skb = nlmsg_new(len, GFP_ATOMIC);
     if(!nl_skb)
     {
@@ -44,7 +48,7 @@ int send_usrmsg(char *pbuf, uint16_t len)
         return -1;
     }
 
-    /* 设置netlink消息头部 */
+    /* Set netlink message header */
     nlh = nlmsg_put(nl_skb, 0, 0, NETLINK_MSG_FOR_SCHIPS, len, 0);
     if(nlh == NULL)
     {
@@ -53,10 +57,10 @@ int send_usrmsg(char *pbuf, uint16_t len)
         return -1;
     }
 
-    /* 拷贝数据发送 */
+/*  /*copy data to send */
     memcpy(nlmsg_data(nlh), pbuf, len);
     ret_nl= netlink_unicast(nlsk, nl_skb, USER_PORT, MSG_DONTWAIT);
-    // nlmsg_free(nl_skb); 发送的skb不需要内核模块去释放，也不能释放，否则会崩溃。内核会处理skb的释放，所以不会出现内存泄露问题
+   
     return ret_nl;
 }
 
