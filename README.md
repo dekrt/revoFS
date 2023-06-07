@@ -1,12 +1,13 @@
 
 
-<div align="center">
-    <img src="./pics/revoFS.jpg" align="center" width = "40%">
-</div>
 <div align = "center">
 	<h1 align = "center">revoFS</h1>    
     <h4 align = "center">proj209-Linux-Custom-Filesystem</h4>
 </div>
+
+> 项目视频链接：https://pan.baidu.com/s/12arzEIjhqIRb4cXGoarT4A?pwd=ugwn 
+> 提取码：ugwn
+
 ## 一、目标描述
 
 项目的基本目标是设计并实现一个Linux文件系统，本团队设计的文件系统取名`revoFS`，意为<font color = "red">revo</font>lution + <font color = "red">F</font>ile<font color = "red">S</font>ystem，即革命性的文件系统。新设计的revoFS文件系统不仅实现了传统文件系统的读、写、增、删、改、查等全部功能，还实现了内核日志打印到用户空间和文件系统可视化等创新性功能。
