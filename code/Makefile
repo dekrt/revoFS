@@ -6,7 +6,7 @@ KDIR ?= /lib/modules/$(shell uname -r)/build
 MKFS = mkfs.revofs
 
 all: $(MKFS)
-	make -C $(KDIR) M=$(PWD) modules
+	make -C $(KDIR) M=$(shell pwd) modules
 
 IMAGE ?= test.img
 IMAGESIZE ?= 200
@@ -24,8 +24,8 @@ check: all
 	script/test.sh $(IMAGE) $(IMAGESIZE) $(MKFS)
 
 clean:
-	make -C $(KDIR) M=$(PWD) clean
-	rm -f *~ $(PWD)/*.ur-safe
+	make -C $(KDIR) M=$(shell pwd) clean
+	rm -f *~ $(shell pwd)/*.ur-safe
 	rm -f $(MKFS) $(IMAGE)
 
 .PHONY: all clean

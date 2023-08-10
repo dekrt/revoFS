@@ -12,13 +12,12 @@
 
 
 
-/* message type*/
+/* message type, no more than 32 */
 #define NETLINK_MSG_FOR_SCHIPS    30 
-// no more than 32
 
-// The port number
+/* The port number */
 #define USER_PORT        123
-// message length limit
+/* message length limit */
 #define MSG_LEN         125
 #define MAX_PLOAD       MSG_LEN
 
@@ -57,7 +56,7 @@ int send_usrmsg(char *pbuf, uint16_t len)
         return -1;
     }
 
-/*  /*copy data to send */
+    /* copy data to send */
     memcpy(nlmsg_data(nlh), pbuf, len);
     ret_nl= netlink_unicast(nlsk, nl_skb, USER_PORT, MSG_DONTWAIT);
    
