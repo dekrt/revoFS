@@ -1,9 +1,12 @@
 
 
 <div align = "center">
+    <image src = "./pics/revoFS.jpg" width = "33%"></image>
 	<h1 align = "center">revoFS</h1>    
     <h4 align = "center">proj209-Linux-Custom-Filesystem</h4>
 </div>
+
+
 
 > 项目视频链接：https://pan.baidu.com/s/12arzEIjhqIRb4cXGoarT4A?pwd=ugwn 
 > 提取码：ugwn

@@ -277,7 +277,12 @@ int revofs_fill_super(struct super_block *sb, void *data, int silent)
     }
 
     /* Create root inode */
+#if MNT_IDMAP_REQUIRED()
     root_inode = revofs_iget(sb, 0);
+#else
+    root_inode = revofs_iget(sb, 1);
+#endif
+
     if (IS_ERR(root_inode)) {
         ret = PTR_ERR(root_inode);
         goto free_bfree;

@@ -1,0 +1,16 @@
+make clean
+make 
+sudo insmod revofs.ko
+lsmod
+make test.img
+mkdir -p test
+dd if=/dev/zero of=test.img bs=1M count=50
+./mkfs.revofs test.img
+sudo mount -o loop -t simplefs test.img test
+sudo dmesg
+sudo su
+echo "hello" > test/hello
+cat test/hello
+ls -lR
+sudo umount test
+sudo rmmod revofs

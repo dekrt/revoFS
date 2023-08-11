@@ -93,6 +93,10 @@ static int write_inode_store(int fd, struct superblock *sb)
     uint32_t first_data_block = 1 + le32toh(sb->info.nr_bfree_blocks) +
                                 le32toh(sb->info.nr_ifree_blocks) +
                                 le32toh(sb->info.nr_istore_blocks);
+#if !MNT_IDMAP_REQUIRED()
+    inode += 1;
+#endif
+    
     inode->i_mode = htole32(S_IFDIR | S_IRUSR | S_IRGRP | S_IROTH | S_IWUSR |
                             S_IWGRP | S_IXUSR | S_IXGRP | S_IXOTH);
     inode->i_uid = 0;
