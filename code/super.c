@@ -43,7 +43,7 @@ static void revofs_destroy_inode(struct inode *inode)
 }
 
 static int revofs_write_inode(struct inode *inode,
-                                struct writeback_control *wbc)
+                              struct writeback_control *wbc)
 {
     struct revofs_inode *disk_inode;
     struct revofs_inode_info *ci = REVOFS_INODE(inode);
@@ -287,7 +287,7 @@ int revofs_fill_super(struct super_block *sb, void *data, int silent)
         ret = PTR_ERR(root_inode);
         goto free_bfree;
     }
-    
+
 #if MNT_IDMAP_REQUIRED()
     inode_init_owner(&nop_mnt_idmap, root_inode, NULL, root_inode->i_mode);
 #elif USER_NS_REQUIRED()
@@ -295,7 +295,7 @@ int revofs_fill_super(struct super_block *sb, void *data, int silent)
 #else
     inode_init_owner(root_inode, NULL, root_inode->i_mode);
 #endif
-    
+
     sb->s_root = d_make_root(root_inode);
     if (!sb->s_root) {
         ret = -ENOMEM;

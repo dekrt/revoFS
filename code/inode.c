@@ -105,7 +105,7 @@ static struct dentry *revofs_lookup(struct inode *dir,
     struct revofs_file_ei_block *eblock = NULL;
     struct revofs_dir_block *dblock = NULL;
     struct revofs_file *f = NULL;
-    int ei, bi, fi;
+    int ei, bi, fi; /* Indexes for extent, block, and file */
 
     /* Check filename length */
     if (dentry->d_name.len > REVOFS_FILENAME_LEN)
@@ -261,10 +261,10 @@ put_ino:
  */
 #if MNT_IDMAP_REQUIRED()
 static int revofs_create(struct mnt_idmap *id,
-                           struct inode *dir,
-                           struct dentry *dentry,
-                           umode_t mode,
-                           bool excl)
+                         struct inode *dir,
+                         struct dentry *dentry,
+                         umode_t mode,
+                         bool excl)
 #elif USER_NS_REQUIRED()
 static int revofs_create(struct user_namespace *ns,
                          struct inode *dir,
@@ -580,11 +580,11 @@ clean_inode:
 
 #if MNT_IDMAP_REQUIRED()
 static int revofs_rename(struct mnt_idmap *id,
-                           struct inode *old_dir,
-                           struct dentry *old_dentry,
-                           struct inode *new_dir,
-                           struct dentry *new_dentry,
-                           unsigned int flags)
+                         struct inode *old_dir,
+                         struct dentry *old_dentry,
+                         struct inode *new_dir,
+                         struct dentry *new_dentry,
+                         unsigned int flags)
 #elif USER_NS_REQUIRED()
 static int revofs_rename(struct user_namespace *ns,
                          struct inode *old_dir,
@@ -731,9 +731,9 @@ release_new:
 
 #if MNT_IDMAP_REQUIRED()
 static int revofs_mkdir(struct mnt_idmap *id,
-                          struct inode *dir,
-                          struct dentry *dentry,
-                          umode_t mode)
+                        struct inode *dir,
+                        struct dentry *dentry,
+                        umode_t mode)
 {
     return revofs_create(id, dir, dentry, mode | S_IFDIR, 0);
 }
@@ -867,9 +867,9 @@ end:
 
 #if MNT_IDMAP_REQUIRED()
 static int revofs_symlink(struct mnt_idmap *id,
-                            struct inode *dir,
-                            struct dentry *dentry,
-                            const char *symname)
+                          struct inode *dir,
+                          struct dentry *dentry,
+                          const char *symname)
 #elif USER_NS_REQUIRED()
 static int revofs_symlink(struct user_namespace *ns,
                           struct inode *dir,

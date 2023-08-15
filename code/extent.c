@@ -7,10 +7,8 @@
  * Search the extent which contain the target block.
  * Retrun the first unused file index if not found.
  * Return -1 if it is out of range.
- * TODO: use binary search.
  */
-uint32_t revofs_ext_search(struct revofs_file_ei_block *index,
-                             uint32_t iblock)
+uint32_t revofs_ext_search(struct revofs_file_ei_block *index, uint32_t iblock)
 {
     uint32_t i;
     for (i = 0; i < REVOFS_MAX_EXTENTS; i++) {

@@ -1,4 +1,6 @@
-#define pr_fmt(fmt) "revofs: " fmt
+/* dir.c - Source file for directory operations in the RevOS file system.
+ * This file provides implementations for directory-related operations such as listing directory entries.
+ */
 
 #include <linux/buffer_head.h>
 #include <linux/fs.h>
@@ -11,18 +13,19 @@
  * Iterate over the files contained in dir and commit them in ctx.
  * This function is called by the VFS while ctx->pos changes.
  * Return 0 on success.
+ * ctx: context for the directory iteration
  */
 static int revofs_iterate(struct file *dir, struct dir_context *ctx)
 {
-    struct inode *inode = file_inode(dir);
-    struct revofs_inode_info *ci = REVOFS_INODE(inode);
-    struct super_block *sb = inode->i_sb;
-    struct buffer_head *bh = NULL, *bh2 = NULL;
-    struct revofs_file_ei_block *eblock = NULL;
-    struct revofs_dir_block *dblock = NULL;
-    struct revofs_file *f = NULL;
-    int ei = 0, bi = 0, fi = 0;
-    int ret = 0;
+    struct inode *inode = file_inode(dir);              /* Extract the inode from the directory file */
+    struct revofs_inode_info *ci = REVOFS_INODE(inode); /* Get the custom inode information for RevOS */
+    struct super_block *sb = inode->i_sb;               /* Extract the superblock */
+    struct buffer_head *bh = NULL, *bh2 = NULL;         /* Buffer heads for reading block data */
+    struct revofs_file_ei_block *eblock = NULL;         /* Extent index block for the directory */
+    struct revofs_dir_block *dblock = NULL;             /* Directory block structure */
+    struct revofs_file *f = NULL;                       /* File entry within the directory */
+    int ei = 0, bi = 0, fi = 0;                         /* Indexes for extent, block, and file */
+    int ret = 0;                                        /* Return value */
 
     /* Check that dir is a directory */
     if (!S_ISDIR(inode->i_mode))
@@ -42,12 +45,11 @@ static int revofs_iterate(struct file *dir, struct dir_context *ctx)
     /* Read the directory index block on disk */
     bh = sb_bread(sb, ci->ei_block);
     if (!bh)
-        return -EIO;
+        return -EIO; /* I/O error */
     eblock = (struct revofs_file_ei_block *) bh->b_data;
 
     ei = (ctx->pos - 2) / REVOFS_FILES_PER_EXT;
-    bi = (ctx->pos - 2) % REVOFS_FILES_PER_EXT
-         / REVOFS_FILES_PER_BLOCK;
+    bi = (ctx->pos - 2) % REVOFS_FILES_PER_EXT / REVOFS_FILES_PER_BLOCK;
     fi = (ctx->pos - 2) % REVOFS_FILES_PER_BLOCK;
 
     /* Iterate over the index block and commit subfiles */
@@ -70,7 +72,7 @@ static int revofs_iterate(struct file *dir, struct dir_context *ctx)
             for (; fi < REVOFS_FILES_PER_BLOCK; fi++) {
                 f = &dblock->files[fi];
                 if (f->inode && !dir_emit(ctx, f->filename, REVOFS_FILENAME_LEN,
-                               f->inode, DT_UNKNOWN))
+                                          f->inode, DT_UNKNOWN))
                     break;
                 ctx->pos++;
             }

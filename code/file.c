@@ -1,4 +1,4 @@
-#define pr_fmt(fmt) "revofs: " fmt
+#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/buffer_head.h>
 #include <linux/fs.h>
@@ -14,9 +14,9 @@
  * true, allocate a new block on disk and map it.
  */
 static int revofs_file_get_block(struct inode *inode,
-                                   sector_t iblock,
-                                   struct buffer_head *bh_result,
-                                   int create)
+                                 sector_t iblock,
+                                 struct buffer_head *bh_result,
+                                 int create)
 {
     struct super_block *sb = inode->i_sb;
     struct revofs_sb_info *sbi = REVOFS_SB(sb);
@@ -29,7 +29,7 @@ static int revofs_file_get_block(struct inode *inode,
 
     /* If block number exceeds filesize, fail */
     if (iblock >= REVOFS_MAX_BLOCKS_PER_EXTENT * REVOFS_MAX_EXTENTS)
-        return -EFBIG;
+        return -EFBIG; /* File too large */
 
     /* Read directory block from disk */
     bh_index = sb_bread(sb, ci->ei_block);
@@ -39,7 +39,7 @@ static int revofs_file_get_block(struct inode *inode,
 
     extent = revofs_ext_search(index, iblock);
     if (extent == -1) {
-        ret = -EFBIG;
+        ret = -EFBIG; /* File too large */
         goto brelse_index;
     }
 
@@ -59,8 +59,7 @@ static int revofs_file_get_block(struct inode *inode,
         index->extents[extent].ee_len = 8;
         index->extents[extent].ee_block =
             extent ? index->extents[extent - 1].ee_block +
-                         index->extents[extent - 1].ee_len
-                   : 0;
+                     index->extents[extent - 1].ee_len : 0;
         alloc = true;
     } else {
         bno = index->extents[extent].ee_start + iblock -
@@ -108,19 +107,19 @@ static int revofs_writepage(struct page *page, struct writeback_control *wbc)
  */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0)
 static int revofs_write_begin(struct file *file,
-                                struct address_space *mapping,
-                                loff_t pos,
-                                unsigned int len,
-                                struct page **pagep,
-                                void **fsdata)
+                              struct address_space *mapping,
+                              loff_t pos,
+                              unsigned int len,
+                              struct page **pagep,
+                              void **fsdata)
 #else
 static int revofs_write_begin(struct file *file,
-                                struct address_space *mapping,
-                                loff_t pos,
-                                unsigned int len,
-                                unsigned int flags,
-                                struct page **pagep,
-                                void **fsdata)
+                              struct address_space *mapping,
+                              loff_t pos,
+                              unsigned int len,
+                              unsigned int flags,
+                              struct page **pagep,
+                              void **fsdata)
 #endif
 {
     struct revofs_sb_info *sbi = REVOFS_SB(file->f_inode->i_sb);
@@ -157,12 +156,12 @@ static int revofs_write_begin(struct file *file,
  * necessary.
  */
 static int revofs_write_end(struct file *file,
-                              struct address_space *mapping,
-                              loff_t pos,
-                              unsigned int len,
-                              unsigned int copied,
-                              struct page *page,
-                              void *fsdata)
+                            struct address_space *mapping,
+                            loff_t pos,
+                            unsigned int len,
+                            unsigned int copied,
+                            struct page *page,
+                            void *fsdata)
 {
     struct inode *inode = file->f_inode;
     struct revofs_inode_info *ci = REVOFS_INODE(inode);

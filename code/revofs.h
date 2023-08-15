@@ -1,8 +1,16 @@
+/* revofs.h - Header file for the revoFS.
+ * This file contains important data structures, macros, and function
+ * declarations for the file system.
+ */
+
 #ifndef REVOFS_H
 #define REVOFS_H
 
-/* source: https://en.wikipedia.org/wiki/Hexspeak */
-#define REVOFS_MAGIC 0x52455245
+/* source: https://en.wikipedia.org/wiki/Hexspeak
+ * R, E, V, O in ASCII: 0x52, 0x45, 0x56, 0x4F
+ * 0x52 + 0x45 + 0x56 + 0x4F = 0x5245564F
+ */ 
+#define REVOFS_MAGIC 0x5245564F
 
 #define REVOFS_SB_BLOCK_NR 0
 
@@ -10,26 +18,29 @@
 #define REVOFS_MAX_EXTENTS \
     ((REVOFS_BLOCK_SIZE - sizeof(uint32_t)) / sizeof(struct revofs_extent))
 #define REVOFS_MAX_BLOCKS_PER_EXTENT 8 /* It can be ~(uint32) 0 */
-#define REVOFS_MAX_FILESIZE                                      \
-    ((uint64_t) REVOFS_MAX_BLOCKS_PER_EXTENT *REVOFS_BLOCK_SIZE \
-        *REVOFS_MAX_EXTENTS)
+#define REVOFS_MAX_FILESIZE                                        \
+    ((uint64_t) REVOFS_MAX_BLOCKS_PER_EXTENT * REVOFS_BLOCK_SIZE * \
+     REVOFS_MAX_EXTENTS)
 
 #define REVOFS_FILENAME_LEN 255
 
-#define REVOFS_FILES_PER_BLOCK \
-    (REVOFS_BLOCK_SIZE / sizeof(struct revofs_file))
+#define REVOFS_FILES_PER_BLOCK (REVOFS_BLOCK_SIZE / sizeof(struct revofs_file))
 #define REVOFS_FILES_PER_EXT \
-    (REVOFS_FILES_PER_BLOCK *REVOFS_MAX_BLOCKS_PER_EXTENT)
+    (REVOFS_FILES_PER_BLOCK * REVOFS_MAX_BLOCKS_PER_EXTENT)
 
-#define REVOFS_MAX_SUBFILES \
-    (REVOFS_FILES_PER_EXT *REVOFS_MAX_EXTENTS)
+#define REVOFS_MAX_SUBFILES (REVOFS_FILES_PER_EXT * REVOFS_MAX_EXTENTS)
 
 #include <linux/version.h>
 
-#define USER_NS_REQUIRED() LINUX_VERSION_CODE >= KERNEL_VERSION(5,12,0)
-#define MNT_IDMAP_REQUIRED() LINUX_VERSION_CODE >= KERNEL_VERSION(6,3,0)
+#define USER_NS_REQUIRED() LINUX_VERSION_CODE >= KERNEL_VERSION(5, 12, 0)
+/*
+ * When Linux Version >= 6.3.0(like arch linux or so), the usage of
+ * inode_init_owner() has alraedy changed, so we need to use
+ * MNT_IDMAP_REQUIRED() to check if we need to use the old version.
+ */
+#define MNT_IDMAP_REQUIRED() LINUX_VERSION_CODE >= KERNEL_VERSION(6, 3, 0)
 
-
+/* Data structure representing an inode in revoFS */
 struct revofs_inode {
     uint32_t i_mode;   /* File mode */
     uint32_t i_uid;    /* Owner id */
@@ -40,17 +51,18 @@ struct revofs_inode {
     uint32_t i_mtime;  /* Modification time */
     uint32_t i_blocks; /* Block count */
     uint32_t i_nlink;  /* Hard links count */
-    uint32_t ei_block;  /* Block with list of extents for this file */
-    char i_data[32]; /* store symlink content */
+    uint32_t ei_block; /* Block with list of extents for this file */
+    char i_data[32];   /* store symlink content */
 };
 
 #define REVOFS_INODES_PER_BLOCK \
     (REVOFS_BLOCK_SIZE / sizeof(struct revofs_inode))
 
+/* Data structure representing the superblock information of revoFS */
 struct revofs_sb_info {
     uint32_t magic; /* Magic number */
 
-    uint32_t nr_blocks; /* Total number of blocks (incl sb & inodes) */
+    uint32_t nr_blocks; /* Total number of blocks (include sb & inodes) */
     uint32_t nr_inodes; /* Total number of inodes */
 
     uint32_t nr_istore_blocks; /* Number of inode store blocks */
@@ -61,6 +73,7 @@ struct revofs_sb_info {
     uint32_t nr_free_blocks; /* Number of free blocks */
 
 #ifdef __KERNEL__
+    /* Extended inode information for kernel operations */
     unsigned long *ifree_bitmap; /* In-memory free inodes bitmap */
     unsigned long *bfree_bitmap; /* In-memory free blocks bitmap */
 #endif
@@ -69,7 +82,7 @@ struct revofs_sb_info {
 #ifdef __KERNEL__
 
 struct revofs_inode_info {
-    uint32_t ei_block;  /* Block with list of extents for this file */
+    uint32_t ei_block; /* Block with list of extents for this file */
     char i_data[32];
     struct inode vfs_inode;
 };
@@ -80,6 +93,7 @@ struct revofs_extent {
     uint32_t ee_start; /* first physical block extent covers */
 };
 
+/* Data structure for an extent-index block */
 struct revofs_file_ei_block {
     uint32_t nr_files; /* Number of files in directory */
     struct revofs_extent extents[REVOFS_MAX_EXTENTS];
@@ -90,6 +104,7 @@ struct revofs_file {
     char filename[REVOFS_FILENAME_LEN];
 };
 
+/* Data structure representing a directory block in revoFS */
 struct revofs_dir_block {
     struct revofs_file files[REVOFS_FILES_PER_BLOCK];
 };
@@ -109,7 +124,7 @@ extern const struct address_space_operations revofs_aops;
 
 /* extent functions */
 extern uint32_t revofs_ext_search(struct revofs_file_ei_block *index,
-                                    uint32_t iblock);
+                                  uint32_t iblock);
 
 /* Getters for superbock and inode */
 #define REVOFS_SB(sb) (sb->s_fs_info)

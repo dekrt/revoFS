@@ -1,18 +1,18 @@
-BasedOnStyle: Chromium
-Language: Cpp
-MaxEmptyLinesToKeep: 3
-IndentCaseLabels: false
-AllowShortIfStatementsOnASingleLine: false
-AllowShortCaseLabelsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
-DerivePointerAlignment: false
-PointerAlignment: Right
-SpaceAfterCStyleCast: true
-TabWidth: 4
-UseTab: Never
-IndentWidth: 4
-BreakBeforeBraces: Linux
-AccessModifierOffset: -4
-ForEachMacros:
+BasedOnStyle: Chromium                     # 基于 Chromium 代码样式。
+Language: Cpp                              # 为 C++ 代码设置样式。
+MaxEmptyLinesToKeep: 3                     # 保留最多 3 个连续的空行。
+IndentCaseLabels: false                    # 不缩进 `case` 标签。
+AllowShortIfStatementsOnASingleLine: false # 不允许单行的短 `if` 语句。
+AllowShortCaseLabelsOnASingleLine: false   # 不允许单行的 `case` 标签。
+AllowShortLoopsOnASingleLine: false        # 不允许单行的短循环。
+DerivePointerAlignment: false              # 不从代码中推导指针对齐方式。
+PointerAlignment: Right                    # 指针对齐方式为右对齐（例如，`int* a`）。
+SpaceAfterCStyleCast: true                 # 在 C 风格的强制转换后添加空格。
+TabWidth: 4                                # 设置制表符宽度为 4。
+UseTab: Never                              # 从不使用制表符。
+IndentWidth: 4                             # 设置缩进宽度为 4 个空格。
+BreakBeforeBraces: Linux                   # 使用 Linux 风格的括号换行。
+AccessModifierOffset: -4                   # 设置访问修饰符（如 `private`，`protected`）的偏移为 -4 个空格。
+ForEachMacros:                             # 定义了两个 `for_each` 宏，它们在遍历集合时会被特殊处理。
   - 'for_each_set_bit'
   - 'for_each_set_bit_from'
