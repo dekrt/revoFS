@@ -72,8 +72,8 @@ struct revofs_sb_info {
     uint32_t nr_free_inodes; /* Number of free inodes */
     uint32_t nr_free_blocks; /* Number of free blocks */
 
+/* Extended inode information for kernel operations */
 #ifdef __KERNEL__
-    /* Extended inode information for kernel operations */
     unsigned long *ifree_bitmap; /* In-memory free inodes bitmap */
     unsigned long *bfree_bitmap; /* In-memory free blocks bitmap */
 #endif

@@ -1,3 +1,7 @@
+/* inode.c - Source file for inode operations in the revoFS file system.
+ * This file provides implementations for inode-related operations.
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/buffer_head.h>

@@ -1,3 +1,7 @@
+/* mkfs.c - Source file for mkfs operations in the revoFS file system.
+ * This file provides implementations for mkfs-related operations.
+ */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <linux/fs.h>

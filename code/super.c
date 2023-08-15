@@ -1,3 +1,7 @@
+/* super.c - Source file for superblock operations in the revoFS file system.
+ * This file provides implementations for superblock-related operations such as initializing the inode cache.
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/buffer_head.h>

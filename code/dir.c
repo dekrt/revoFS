@@ -1,4 +1,4 @@
-/* dir.c - Source file for directory operations in the RevOS file system.
+/* dir.c - Source file for directory operations in the revoFS file system.
  * This file provides implementations for directory-related operations such as listing directory entries.
  */
 
@@ -18,7 +18,7 @@
 static int revofs_iterate(struct file *dir, struct dir_context *ctx)
 {
     struct inode *inode = file_inode(dir);              /* Extract the inode from the directory file */
-    struct revofs_inode_info *ci = REVOFS_INODE(inode); /* Get the custom inode information for RevOS */
+    struct revofs_inode_info *ci = REVOFS_INODE(inode); /* Get the custom inode information for revoFS */
     struct super_block *sb = inode->i_sb;               /* Extract the superblock */
     struct buffer_head *bh = NULL, *bh2 = NULL;         /* Buffer heads for reading block data */
     struct revofs_file_ei_block *eblock = NULL;         /* Extent index block for the directory */

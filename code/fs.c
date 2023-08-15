@@ -1,3 +1,7 @@
+/* fs.c - Source file for fs operations in the revoFS file system.
+ * This file provides implementations for fs-related operations.
+ */
+
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #include <linux/fs.h>

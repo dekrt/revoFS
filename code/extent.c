@@ -1,3 +1,7 @@
+/* extent.c - Source file for extent operations in the revoFS file system.
+ * This file provides implementations for extent-related operations.
+ */
+
 #include <linux/fs.h>
 #include <linux/kernel.h>
 
