@@ -1,16 +1,42 @@
-make clean
-make 
-sudo insmod revofs.ko
-lsmod
+五个文件系统验证测试
+准备步骤：
+make
+sudo insmod revofs.ko 
+lsmod | grep revofs
 make test.img
-mkdir -p test
-dd if=/dev/zero of=test.img bs=1M count=50
-./mkfs.revofs test.img
-sudo mount -o loop -t revofs test.img test
-sudo dmesg
+mkdir -p test  
+dd if=/dev/zero of=test.img bs=1M count=50   #生成50M的映像文件
+
+1.文件系统格式化
+步骤： 
+./mkfs.revofs test.img   #文件系统格式化工具
+
+2.验证与虚拟文件系统VFS对接测试
+步骤：
+sudo mount -o loop -t revofs test.img test  #指定文件系统类型 挂载文件系统到目录test
+dmesg | tail  #打印对接消息
+
+3.验证文件系统的读写测试
+步骤：
+echo "OS2023" > ./test/hello
+ls -la test
+cat ./test/hello    #发现文件的读入与写出是一致的，说明文件系统的读写功能是正确的
+
+ 4.验证权限属性管理
+ 步骤：
+echo "hello world" > test/hello  #文件的执行权限不够
 sudo su
-echo "hello" > test/hello
+#
+echo "hello world" > test/hello
 cat test/hello
-ls -lR
-sudo umount test
-sudo rmmod revofs
+#
+#切换为普通用户
+echo "test normal user write" >> test/hello   #权限不够
+sudo chmod -R 777 test
+echo "test normal user write" >> test/hello
+cat test/hello  #更改权限后成功执行
+
+ 5用户态的测试脚本
+ 步骤：
+./setup.sh
+ 
